@@ -1,0 +1,676 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Interactive Scroll Experience</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=Inter:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body { background: #000; }
+
+    .ise-outer {
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+      background-color: #000;
+    }
+
+    .scroll-container {
+      width: 100%;
+      background-color: #000;
+      color: #ffffff;
+      font-family: 'Bricolage Grotesque', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    }
+
+    .intro-stage {
+      width: 100%;
+      height: 100vh;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Stage 1 */
+    .stage-out {
+      position: absolute;
+      inset: 0;
+      background: #000;
+      font-family: 'Bricolage Grotesque', sans-serif;
+      font-weight: 400;
+      line-height: normal;
+      color: white;
+      white-space: nowrap;
+    }
+
+    .stage-out p {
+      position: absolute;
+    }
+
+    .stage-out p:first-child {
+      left: calc(50% - 142px);
+      font-size: 32px;
+      top: calc(50% - 62px);
+    }
+
+    .stage-out p:last-child {
+      left: calc(50% - 326px);
+      font-size: 48px;
+      top: calc(50% + 1px);
+    }
+
+    /* Stage 2 */
+    .stage-in {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .stage-in-text {
+      text-align: center;
+      line-height: 1.2;
+    }
+
+    .blur-text-line:nth-child(1) { font-size: 48px; margin-bottom: 0.5rem; }
+    .blur-text-line:nth-child(2) { font-size: 64px; margin-bottom: 0.5rem; }
+    .blur-text-line:nth-child(3) { font-size: 48px; }
+
+    /* Stage 3 */
+    .stage-3 {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .glare-png {
+      position: absolute;
+      left: 50%; top: 50%;
+      width: 766px; height: 744px;
+      mix-blend-mode: screen;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .spark-svg {
+      position: absolute;
+      left: 50%; top: 50%;
+      width: 375px; height: 377px;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .spark-svg svg {
+      width: 100%; height: 100%;
+      display: block;
+      overflow: visible;
+    }
+
+    .stage-3-text {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+      font-size: 48px;
+      font-weight: 400;
+      font-variation-settings: 'opsz' 14, 'wdth' 100;
+      white-space: nowrap;
+    }
+
+    /* Galaxy layers */
+    .gal-layer {
+      position: absolute;
+      left: 50%; top: 50%;
+      pointer-events: none;
+    }
+
+    #gal-bg {
+      object-fit: cover;
+      z-index: 4;
+    }
+
+    #gal-far, #gal-mid, #gal-near {
+      width: 4096px; height: 4096px;
+      object-fit: cover;
+      object-position: center;
+    }
+
+    #gal-far  { z-index: 5; }
+    #gal-mid  { z-index: 6; }
+    #gal-near { z-index: 7; }
+
+    /* Glare + spark sit above galaxy layers */
+    .glare-png { z-index: 8; }
+    .spark-svg { z-index: 9; }
+
+    /* ── Section 4 ─────────────────────────────────────────────────────── */
+    .section-4 {
+      width: 100%;
+      background: #000;
+    }
+
+    .s4-inner {
+      width: min(1100px, 90%);
+      margin: 0 auto;
+    }
+
+    /* Header — text centered with enough top padding to feel like a first viewport */
+    .s4-header {
+      padding: 80px 0 48px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 16px;
+    }
+
+    .s4-count {
+      font-family: 'Bricolage Grotesque', sans-serif;
+      font-size: 56px;
+      font-weight: 400;
+      font-variation-settings: 'opsz' 14, 'wdth' 100;
+      color: #fff;
+      line-height: 1.1;
+    }
+
+    .s4-subtitle {
+      font-family: 'Inter', sans-serif;
+      font-size: 24px;
+      font-weight: 400;
+      color: #fff;
+      line-height: 1.5;
+      max-width: 640px;
+    }
+
+    .s4-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      padding-bottom: 120px;
+    }
+
+    .s4-box {
+      background: #1e1e1e;
+      border-radius: 12px;
+      padding: 28px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 24px;
+    }
+
+    .s4-box-message {
+      font-family: 'Inter', sans-serif;
+      font-size: 15px;
+      font-weight: 400;
+      font-style: italic;
+      color: #fff;
+      line-height: 1.7;
+    }
+
+    .s4-box-author {
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      font-style: italic;
+      color: #fff;
+      opacity: 0.7;
+    }
+
+    /* S1/S2 galaxy overlay */
+    #s12-overlay {
+      position: absolute;
+      inset: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+      mix-blend-mode: color-dodge;
+      pointer-events: none;
+      z-index: 3;
+    }
+
+    .tail-spacer { height: 50vh; }
+
+    /* SplitType character spans */
+    .char { display: inline-block; }
+  </style>
+</head>
+<body>
+
+<div class="ise-outer">
+  <div class="scroll-container">
+    <section class="intro-stage">
+
+      <!-- Stage 1: greeting -->
+      <div class="stage-out">
+        <p style="font-variation-settings:'opsz' 14,'wdth' 100">Hello Timothy Tan!</p>
+        <p style="font-variation-settings:'opsz' 14,'wdth' 100">We wanted to say Thank you!</p>
+      </div>
+
+      <!-- S1/S2 galaxy overlay — multiply blends galaxy texture onto white text -->
+      <img id="s12-overlay" src="./gal4.jpg" alt="" />
+
+      <!-- Stage 2: thank-you text -->
+      <div class="stage-in">
+        <div class="stage-in-text">
+          <div class="blur-text-line">Thank you! for</div>
+          <div class="blur-text-line">5 years</div>
+          <div class="blur-text-line">With DBS</div>
+        </div>
+      </div>
+
+      <!-- Stage 3: "That's 1 day with DBS" + spark + glare -->
+      <div class="stage-3">
+        <!-- Glare PNG — colorful starburst ring, screen blend -->
+        <img class="glare-png" id="glare-png" src="./glare.png" alt="" />
+
+        <!-- Spark SVG — X shape, inlined so SVG filters render correctly -->
+        <div class="spark-svg" id="spark-svg">
+          <svg viewBox="0 0 458 430" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <g filter="url(#s3_f0)">
+              <path fill-rule="evenodd" clip-rule="evenodd" d="M308.252 293.074L234.727 241.624C234.727 241.624 224.655 233.375 214.247 234.286C203.735 235.206 195.248 245.078 195.248 245.078L131.795 308.512L131.558 308.332L183.019 234.807C183.019 234.807 191.249 224.768 190.327 214.234C189.415 203.805 179.566 195.337 179.566 195.337L116.115 131.813L116.313 131.553L189.823 183.068C189.823 183.068 199.897 191.337 210.409 190.417C220.817 189.507 229.302 179.614 229.302 179.614L292.77 116.115L293.079 116.393L241.502 189.919C241.502 189.919 233.336 199.963 234.248 210.392C235.17 220.925 244.956 229.388 244.956 229.388L308.515 292.83L308.252 293.074Z" fill="#DB3D25"/>
+            </g>
+            <g filter="url(#s3_f1)">
+              <path fill-rule="evenodd" clip-rule="evenodd" d="M341.063 298.66L270.429 249.233C270.429 249.233 260.753 241.309 250.754 242.184C240.655 243.068 232.502 252.551 232.502 252.551L171.545 313.491L171.317 313.319L220.754 242.685C220.754 242.685 228.661 233.04 227.775 222.921C226.899 212.902 217.437 204.767 217.437 204.767L156.481 143.741L156.672 143.491L227.29 192.98C227.29 192.98 236.968 200.924 247.067 200.041C257.066 199.166 265.217 189.662 265.217 189.662L326.19 128.66L326.486 128.928L276.938 199.562C276.938 199.562 269.093 209.211 269.969 219.23C270.854 229.349 280.255 237.479 280.255 237.479L341.315 298.426L341.063 298.66Z" fill="url(#s3_grad)"/>
+            </g>
+            <g opacity="0.9" filter="url(#s3_f2)">
+              <path fill-rule="evenodd" clip-rule="evenodd" d="M349.631 337.531L254.956 258.136C254.956 258.136 242.13 245.614 227.745 245.614C213.215 245.614 200.389 258.136 200.389 258.136L105.743 337.531L105.439 337.256L184.848 242.581C184.848 242.581 197.342 229.799 197.342 215.24C197.342 200.826 184.848 188.029 184.848 188.029L105.439 93.2814L105.743 92.9492L200.389 172.43C200.389 172.43 213.215 184.981 227.745 184.981C242.13 184.981 254.956 172.43 254.956 172.43L349.631 92.9492L350.021 93.3681L270.453 188.029C270.453 188.029 258.047 200.826 258.047 215.24C258.047 229.799 270.453 242.581 270.453 242.581L350.021 337.228L349.631 337.531Z" fill="white"/>
+            </g>
+            <defs>
+              <filter id="s3_f0" x="-0.000259399" y="-0.000259399" width="424.631" height="424.627" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+                <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+                <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+                <feGaussianBlur stdDeviation="58.0577" result="effect1_foregroundBlur"/>
+              </filter>
+              <filter id="s3_f1" x="40.365" y="12.5447" width="417.065" height="417.061" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+                <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+                <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+                <feGaussianBlur stdDeviation="58.0577" result="effect1_foregroundBlur"/>
+              </filter>
+              <filter id="s3_f2" x="89.5859" y="77.0957" width="276.289" height="276.289" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+                <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+                <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+                <feGaussianBlur stdDeviation="7.92676" result="effect1_foregroundBlur"/>
+                <feTurbulence type="fractalNoise" baseFrequency="1.5138585567474365 1.5138585567474365" stitchTiles="stitch" numOctaves="3" result="noise" seed="4961"/>
+                <feColorMatrix in="noise" type="luminanceToAlpha" result="alphaNoise"/>
+                <feComponentTransfer in="alphaNoise" result="coloredNoise1">
+                  <feFuncA type="discrete" tableValues="1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0"/>
+                </feComponentTransfer>
+                <feComposite operator="in" in2="effect1_foregroundBlur" in="coloredNoise1" result="noise1Clipped"/>
+                <feFlood flood-color="rgba(0,0,0,0.1)" result="color1Flood"/>
+                <feComposite operator="in" in2="noise1Clipped" in="color1Flood" result="color1"/>
+                <feMerge>
+                  <feMergeNode in="effect1_foregroundBlur"/>
+                  <feMergeNode in="color1"/>
+                </feMerge>
+              </filter>
+              <radialGradient id="s3_grad" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(248.897 221.073) rotate(85) scale(85.3245)">
+                <stop stop-color="#FFBF00"/>
+                <stop offset="1" stop-color="#58DC00" stop-opacity="0"/>
+              </radialGradient>
+            </defs>
+          </svg>
+        </div>
+
+        <!-- Galaxy layers (bg → far → mid → near) -->
+        <img class="gal-layer" id="gal-bg"   src="./gal3.jpg"  alt="" />
+        <img class="gal-layer" id="gal-far"  src="./Far.png"   alt="" />
+        <img class="gal-layer" id="gal-mid"  src="./Mid.png"   alt="" />
+        <img class="gal-layer" id="gal-near" src="./Near.png"  alt="" />
+
+        <!-- Text on top -->
+        <p class="stage-3-text">That's <span id="day-count">1</span> day with DBS</p>
+      </div>
+
+    </section>
+    <!-- Section 4 -->
+    <section class="section-4">
+      <div class="s4-inner">
+        <div class="s4-header">
+          <p class="s4-count">127 times</p>
+          <p class="s4-subtitle">Your peers stopped what they were doing to say thank you to you</p>
+        </div>
+        <div class="s4-grid">
+          <div class="s4-box">
+            <p class="s4-box-message">I'm really glad to have not just the team, but also my extended teammates' support over the past 2 years. Thank you for always checking in, offering a listening ear, and for the invaluable candid conversations and trust you've extended. Your help has made a real difference for me at work. Thank you!</p>
+            <p class="s4-box-author">~ Placeholder Name</p>
+          </div>
+          <div class="s4-box">
+            <p class="s4-box-message">Thank you for being such an awesome team mate, friend and partner in all our shared projects. No matter the brief, you're always able to find the best creative references and travel inspiration in just minutes. Thanks for always holding space for conversations!</p>
+            <p class="s4-box-author">~ Placeholder Name</p>
+          </div>
+          <div class="s4-box">
+            <p class="s4-box-message">Your explorative, creative, and humorous spirit are much appreciated! Thanks for helping out at the 11th hour on the project. I know I can always come to you to get inspiration on the latest design trends and an honest, constructive critique of my designs. Glad to know you!</p>
+            <p class="s4-box-author">~ Placeholder Name</p>
+          </div>
+          <div class="s4-box">
+            <p class="s4-box-message">Thank you for the trust. I feel very honoured whenever you reach out to consult. I appreciate that you value my inputs. Your curiosity of the world is inspiring. Stay humble always!</p>
+            <p class="s4-box-author">~ Placeholder Name</p>
+          </div>
+          <div class="s4-box">
+            <p class="s4-box-message">Appreciate the trust with your questions — glad I could help out! It's always a pleasure working alongside someone who brings such genuine energy and care to everything they do.</p>
+            <p class="s4-box-author">~</p>
+          </div>
+          <div class="s4-box">
+            <p class="s4-box-message">A huge thank you for your outstanding support on the project! I'm so inspired by your consistent display of a growth mindset, which encourages continuous learning and improvement. I hope we get to work together again!</p>
+            <p class="s4-box-author">~ Placeholder Name</p>
+          </div>
+          <div class="s4-box">
+            <p class="s4-box-message">Thank you for the trust. I feel very honoured whenever you reach out to consult. I appreciate that you value my inputs. Your curiosity of the world is inspiring. Stay humble always!</p>
+            <p class="s4-box-author">~ Placeholder Name</p>
+          </div>
+          <div class="s4-box">
+            <p class="s4-box-message">Appreciate the trust with your questions — glad I could help out! Working with you has been one of the highlights of this year. Your dedication and warmth make every collaboration feel effortless.</p>
+            <p class="s4-box-author">~</p>
+          </div>
+          <div class="s4-box">
+            <p class="s4-box-message">It has been such a joy working with you. Your passion, thoughtfulness, and willingness to go the extra mile never go unnoticed. Thank you for always showing up with such a positive attitude and lifting everyone around you.</p>
+            <p class="s4-box-author">~ Placeholder Name</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="tail-spacer"></div>
+  </div>
+</div>
+
+<!-- ── CDN dependencies ──────────────────────────────────────────────────── -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lenis@1.1.20/dist/lenis.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/split-type@0.3.4/umd/index.min.js"></script>
+
+<script>
+// ─────────────────────────────────────────────────────────────────────────────
+// LIFERAY CONFIG
+// If Liferay wraps its content in a custom scroll container instead of letting
+// the body scroll, set this to the CSS selector of that container.
+// Example: '#wrapper', '.portlet-content', '[data-scroll-container]'
+// Leave as null to use the default window scroll.
+// ─────────────────────────────────────────────────────────────────────────────
+const LIFERAY_SCROLLER = null;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Utilities
+// ─────────────────────────────────────────────────────────────────────────────
+
+function debounce(func, delay) {
+  let timerId;
+  return (...args) => {
+    clearTimeout(timerId);
+    timerId = setTimeout(() => func.apply(this, args), delay);
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TextSplitter
+// ─────────────────────────────────────────────────────────────────────────────
+class TextSplitter {
+  constructor(textElement, options = {}) {
+    if (!textElement || !(textElement instanceof HTMLElement))
+      throw new Error('Invalid text element provided.');
+    const { resizeCallback, splitTypeTypes } = options;
+    this.textElement = textElement;
+    this.onResize    = typeof resizeCallback === 'function' ? resizeCallback : null;
+    const splitOptions = splitTypeTypes ? { types: splitTypeTypes } : {};
+    this.splitText   = new SplitType(this.textElement, splitOptions);
+    if (this.onResize) this.initResizeObserver();
+    this.previousContainerWidth = null;
+  }
+  initResizeObserver() {
+    this.previousContainerWidth = null;
+    new ResizeObserver(debounce((e) => this.handleResize(e), 100))
+      .observe(this.textElement);
+  }
+  handleResize(entries) {
+    const [{ contentRect }] = entries;
+    const width = Math.floor(contentRect.width);
+    if (this.previousContainerWidth && this.previousContainerWidth !== width) {
+      this.splitText.split();
+      if (this.onResize) this.onResize();
+    }
+    this.previousContainerWidth = width;
+  }
+  getChars() { return this.splitText.chars; }
+}
+
+function splitRoots(roots) {
+  const chars = [];
+  roots.forEach(el => {
+    const s = new TextSplitter(el, { splitTypeTypes: 'words, chars' });
+    const c = s.getChars();
+    if (c) chars.push(...c);
+  });
+  return chars;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Smooth scroll
+// ─────────────────────────────────────────────────────────────────────────────
+function initSmoothScrolling() {
+  const cfg = { lerp: 0.2 };
+  if (LIFERAY_SCROLLER) {
+    const el = document.querySelector(LIFERAY_SCROLLER);
+    if (el) cfg.wrapper = el;
+  }
+  const lenis = new Lenis(cfg);
+  lenis.on('scroll', ScrollTrigger.update);
+  gsap.ticker.add((t) => lenis.raf(t * 1000));
+  gsap.ticker.lagSmoothing(0);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Main scroll experience — ONE pin on .intro-stage, ONE unified timeline
+//
+// Timeline units (1 unit ≈ 100 vh of scroll at scrub:1):
+//   0.0 – 1.0   S1 chars blur out
+//   0.5 – 1.5   S2 chars blur in
+//   3.8 – 4.8   S2 chars blur out
+//   4.3 – 5.3   S3 text chars blur in
+//   4.5 – 5.5   Glare PNG + Spark SVG scale 0→1, fade in
+//
+//  Total: ~5.5 units → end: '+=600%'
+// ─────────────────────────────────────────────────────────────────────────────
+function initScrollExperience() {
+  const stage = document.querySelector('.intro-stage');
+  if (!stage) return;
+
+  // DOM refs
+  const s12Overlay = document.getElementById('s12-overlay');
+  const glarePng   = document.getElementById('glare-png');
+  const sparkSvg = document.getElementById('spark-svg');
+  const stage3Txt = stage.querySelector('.stage-3-text');
+  const dayCount  = document.getElementById('day-count');
+  const galBg     = document.getElementById('gal-bg');
+  const galFar    = document.getElementById('gal-far');
+  const galMid    = document.getElementById('gal-mid');
+  const galNear   = document.getElementById('gal-near');
+
+  // Min size the star images shrink to: the larger viewport dimension so the
+  // square image always covers the screen fully with no black bars
+  const minSize = Math.max(stage.offsetWidth, window.innerHeight);
+
+  // Split text into chars
+  const chars1 = splitRoots(Array.from(stage.querySelectorAll('.stage-out p')));
+  const chars2 = splitRoots(Array.from(stage.querySelectorAll('.stage-in .blur-text-line')));
+  const chars3 = splitRoots([stage3Txt]);
+
+  // ── Initial states ──────────────────────────────────────────────────────
+  gsap.set(chars1, { filter: 'blur(0px) brightness(100%)', willChange: 'filter' });
+  gsap.set(chars2, { filter: 'blur(10px) brightness(0%)',  willChange: 'filter' });
+  gsap.set(chars3, { filter: 'blur(10px) brightness(0%)',  willChange: 'filter' });
+
+  // Center glare + spark via GSAP (never use CSS translate on GSAP-animated elements)
+  gsap.set(glarePng, { xPercent: -50, yPercent: -50, scale: 0, opacity: 0 });
+  gsap.set(sparkSvg, { xPercent: -50, yPercent: -50, scale: 0, opacity: 0 });
+
+  // Galaxy layer initial states
+  gsap.set(galBg,   { xPercent: -50, yPercent: -50, width: 4096, height: 4096, opacity: 0 });
+  gsap.set(galFar,  { xPercent: -50, yPercent: -50, width: 4096, height: 4096, opacity: 0 });
+  gsap.set(galMid,  { xPercent: -50, yPercent: -50, width: 4096, height: 4096, opacity: 0 });
+  gsap.set(galNear, { xPercent: -50, yPercent: -50, width: 4096, height: 4096, opacity: 0 });
+
+  // ── Single unified timeline ──────────────────────────────────────────────
+  const scrollerEl = LIFERAY_SCROLLER ? document.querySelector(LIFERAY_SCROLLER) : undefined;
+  const stCfg = {
+    trigger: stage, start: 'top top',
+    end: '+=1250%', pin: true, pinSpacing: true, scrub: 1,
+  };
+  if (scrollerEl) stCfg.scroller = scrollerEl;
+
+  const tl = gsap.timeline({ scrollTrigger: stCfg });
+
+  // Stage 1 → 2
+  if (chars1.length)
+    tl.to(chars1, { filter: 'blur(10px) brightness(0%)', stagger: 0.04, duration: 1, ease: 'none' }, 0.0);
+  if (chars2.length)
+    tl.to(chars2, { filter: 'blur(0px) brightness(100%)', stagger: 0.04, duration: 1, ease: 'none' }, 0.5);
+
+  // Stage 2 holds, then blurs out
+  if (chars2.length)
+    tl.to(chars2, { filter: 'blur(10px) brightness(0%)', stagger: 0.04, duration: 1, ease: 'none' }, 3.8);
+
+  // ── Stage 3 ─────────────────────────────────────────────────────────────
+
+  // Fade out the S1/S2 overlay so it doesn't sit over S3
+  tl.to(s12Overlay, { opacity: 0, duration: 0.4, ease: 'none' }, 4.1);
+
+  // Text blurs in char by char
+  if (chars3.length)
+    tl.to(chars3, { filter: 'blur(0px) brightness(100%)', stagger: 0.05, duration: 1, ease: 'none' }, 4.3);
+
+  // Glare PNG rises in (scale + opacity)
+  tl.to(glarePng, { scale: 1, opacity: 0.2, ease: 'power2.out', duration: 1 }, 4.5);
+
+  // Spark SVG rises in alongside
+  tl.to(sparkSvg, { scale: 1, opacity: 1, ease: 'power2.out', duration: 1 }, 4.5);
+
+  // ── Stage 3 continued: hold on "That's 1 day", then shrink/galaxy ────────
+  // 1 unit hold (5.3→6.5) so users can read "That's 1 day with DBS" at rest
+
+  // Glare + spark shrink to 120px min, ending at 10.5 (same as galaxy layers)
+  // Glare: 766px → 120px = scale 0.157   Spark: 375px → 120px = scale 0.32
+  tl.to(glarePng, { scale: 120 / 766, ease: 'none', duration: 4.0 }, 6.5);
+  tl.to(sparkSvg, { scale: 120 / 375, ease: 'none', duration: 4.0 }, 6.5);
+
+  // Counter ticks 1 → 1825 (fully scrub-driven — goes backwards on scroll-up)
+  const counter = { val: 1 };
+  tl.to(counter, {
+    val: 1825,
+    duration: 4.0,
+    ease: 'none',
+    onUpdate() {
+      const n = Math.round(counter.val);
+      dayCount.textContent = n.toLocaleString();
+    }
+  }, 6.5);
+
+  // bg galaxy fades in + shrinks (slowest layer — duration 3.5, ends at 10.5)
+  tl.to(galBg, { opacity: 0.6, width: minSize, height: minSize, ease: 'none', duration: 3.5 }, 7.0);
+
+  // Star layers fade in
+  tl.to(galFar,  { opacity: 1, ease: 'none', duration: 0.5 }, 7.2);
+  tl.to(galMid,  { opacity: 1, ease: 'none', duration: 0.5 }, 7.4);
+  tl.to(galNear, { opacity: 1, ease: 'none', duration: 0.5 }, 7.6);
+
+  // ── Star flicker — recursive random brightness per layer ─────────────────
+  // Uses filter:brightness() only — no conflict with scroll timeline
+  // (which only animates opacity/width/height on these elements)
+  const rnd = gsap.utils.random;
+  function flicker(el, minB, maxB, minDur, maxDur) {
+    gsap.to(el, {
+      filter: `brightness(${rnd(minB, maxB)})`,
+      duration: rnd(minDur, maxDur),
+      ease: 'sine.inOut',
+      onComplete: () => flicker(el, minB, maxB, minDur, maxDur)
+    });
+  }
+
+  // Staggered start delays so layers don't sync up on load
+  gsap.delayedCall(rnd(0, 0.5), () => flicker(galFar,  0.88, 1.12, 0.6, 1.4));
+  gsap.delayedCall(rnd(0, 0.5), () => flicker(galMid,  0.85, 1.15, 0.4, 1.0));
+  gsap.delayedCall(rnd(0, 0.5), () => flicker(galNear, 0.82, 1.18, 0.2, 0.7));
+
+  // ── Mouse parallax for galaxy layers ────────────────────────────────────
+  // gsap.quickTo gives butter-smooth lag — x/y are separate from the scroll
+  // timeline which only touches width/height/opacity, so no conflicts.
+  const qx = (el, str) => gsap.quickTo(el, 'x', { duration: str, ease: 'power2.out' });
+  const qy = (el, str) => gsap.quickTo(el, 'y', { duration: str, ease: 'power2.out' });
+
+  const pFarX  = qx(galFar,  0.8);  const pFarY  = qy(galFar,  0.8);
+  const pMidX  = qx(galMid,  0.6);  const pMidY  = qy(galMid,  0.6);
+  const pNearX = qx(galNear, 0.4);  const pNearY = qy(galNear, 0.4);
+
+  window.addEventListener('mousemove', (e) => {
+    // Normalise cursor offset from screen centre: -1 → +1
+    const dx = (e.clientX - window.innerWidth  / 2) / (window.innerWidth  / 2);
+    const dy = (e.clientY - window.innerHeight / 2) / (window.innerHeight / 2);
+
+    pFarX (dx * 12);  pFarY (dy * 12);
+    pMidX (dx * 24);  pMidY (dy * 24);
+    pNearX(dx * 40);  pNearY(dy * 40);
+  });
+
+  // Star layers shrink at different rates toward minSize — all end at 10.5
+  // Far: slowest (3.3)   Mid: medium (3.1)   Near: fastest (2.9)
+  tl.to(galFar,  { width: minSize, height: minSize, ease: 'none', duration: 3.3 }, 7.2);
+  tl.to(galMid,  { width: minSize, height: minSize, ease: 'none', duration: 3.1 }, 7.4);
+  tl.to(galNear, { width: minSize, height: minSize, ease: 'none', duration: 2.9 }, 7.6);
+
+  // ── Dead scroll hold — users experience the full galaxy (10.5 → 11.0) ───
+  tl.to({}, { duration: 0.5 }, 10.5);
+
+  // ── Fade galaxy + glare + spark + S3 text out (11.0 → 12.0) ─────────────
+  tl.to([galBg, galFar, galMid, galNear], { opacity: 0, ease: 'none', duration: 1 }, 11.0);
+  tl.to([glarePng, sparkSvg],             { opacity: 0, ease: 'none', duration: 1 }, 11.0);
+  tl.to(stage3Txt,                        { opacity: 0, filter: 'blur(8px)', ease: 'none', duration: 0.8 }, 11.0);
+
+  // ── Hold on black, then pin releases (12.0 → 12.5) ──────────────────────
+  tl.to({}, { duration: 0.5 }, 12.0);
+
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Section 4 — "127 times" + peer boxes
+//
+// Timeline units:
+//   0.0 – 1.0   count + subtitle blur in
+//   0.8 – 2.8   9 boxes stagger in
+//   2.8 – 4.0   dead hold
+// ─────────────────────────────────────────────────────────────────────────────
+function initSection4() {
+  const s4 = document.querySelector('.section-4');
+  if (!s4) return;
+
+  const scrollerEl = LIFERAY_SCROLLER ? document.querySelector(LIFERAY_SCROLLER) : undefined;
+
+  // Whole section starts invisible, fades in as it enters viewport
+  gsap.set(s4, { opacity: 0 });
+
+  const stCfg = {
+    trigger: s4,
+    start: 'top 90%',
+    toggleActions: 'play none none none',
+  };
+  if (scrollerEl) stCfg.scroller = scrollerEl;
+
+  gsap.to(s4, { opacity: 1, duration: 0.8, ease: 'power2.out', scrollTrigger: stCfg });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Boot
+// ─────────────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  gsap.registerPlugin(ScrollTrigger);
+  requestAnimationFrame(() => {
+    initSmoothScrolling();
+    initScrollExperience();
+    initSection4();
+  });
+});
+</script>
+</body>
+</html>
