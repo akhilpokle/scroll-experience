@@ -231,6 +231,181 @@
       z-index: 3;
     }
 
+    /* ── Section 6: Medal ───────────────────────────────────────────────── */
+    .section-6 {
+      width: 100%;
+      height: 100vh;
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 48px;
+      overflow: hidden;
+    }
+
+    /* Perspective root — mouse tilt applied here */
+    .medal-scene {
+      perspective: 1000px;
+      width: 320px;
+      height: 321px;
+      cursor: pointer;
+      transform-style: preserve-3d;
+      transition: transform 0.15s ease-out;
+    }
+
+    /* Launch animation wrapper */
+    .medal-launch {
+      width: 100%;
+      height: 100%;
+      transform-style: preserve-3d;
+    }
+
+    /* LAUNCH ANIMATION — commented out, preserved for future use
+    .medal-launch.launch-active {
+      animation: medalLaunch 3.2s linear both;
+    }
+
+    @keyframes medalLaunch {
+      0%   { transform: translateY(370px) scale(0.05) rotateY(0deg);
+             animation-timing-function: cubic-bezier(0.2, 0.7, 0.5, 1); }
+      35%  { transform: translateY(-80px) scale(0.9) rotateY(1080deg);
+             animation-timing-function: cubic-bezier(0.5, 0, 0.8, 0.4); }
+      100% { transform: translateY(0) scale(1) rotateY(1800deg); }
+    }
+    */
+
+    /* Flip wrapper */
+    .medal-coin {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 2.8s ease-in-out;
+    }
+
+    .medal-coin.is-flipped {
+      transform: rotateY(180deg) !important;
+    }
+
+    /* Shared face styles */
+    .medal-face {
+      position: absolute;
+      inset: 0;
+      transform-style: preserve-3d;
+      /* backface-visibility removed — SVG filters break it;
+         opacity is controlled via JS cosine curve instead */
+      transition: opacity 0.06s linear;
+    }
+
+    /* Face transforms — overridden by buildCoinEdges() at runtime */
+    .coin-front { transform: translateZ(1px); }
+    .coin-back  { transform: rotateY(180deg) translateZ(1px); z-index: 1; }
+
+    /* Coin edge layers — SVG img inside, darkened for rim appearance */
+    .coin-edge {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    /* Edges fully opaque — 34 medal-shaped copies stack into a solid mass;
+       the SVG's own transparent background keeps the clover silhouette */
+    .coin-edge img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      opacity: 1;
+    }
+
+    .medal-img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    /* Shimmer overlay — warm radial gradient masked by shimmer.png */
+    .medal-shimmer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background-image: radial-gradient(circle at center,
+        rgba(255,248,220,0.95) 0%,
+        rgba(255,230,170,0.6)  35%,
+        rgba(255,210,130,0)    70%);
+      -webkit-mask-image: url(./shimmer.png);
+      mask-image: url(./shimmer.png);
+      -webkit-mask-repeat: no-repeat;
+      mask-repeat: no-repeat;
+      -webkit-mask-size: 180% 180%;
+      mask-size: 180% 180%;
+      -webkit-mask-position: var(--sx, 50%) var(--sy, 50%);
+      mask-position: var(--sx, 50%) var(--sy, 50%);
+      mix-blend-mode: screen;
+      opacity: 0;
+      transition: opacity 0.25s ease-out;
+    }
+
+    /* Back face inscription */
+    .medal-back-text {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      color: #3d2f24;
+      font-family: 'Bricolage Grotesque', Georgia, serif;
+      text-align: center;
+      padding: 24px;
+    }
+
+    .medal-back-label  { font-size: 11px; letter-spacing: 0.32em; text-transform: uppercase; margin-bottom: 10px; color: #5b4636; }
+    .medal-back-name   { font-size: 22px; font-weight: 600; margin-bottom: 10px; color: #2e2118; }
+    .medal-back-desc   { font-size: 13px; letter-spacing: 0.06em; color: #4a3828; }
+    .medal-back-years  { font-size: 22px; font-weight: 600; margin: 6px 0; color: #2e2118; }
+    .medal-back-org    { font-size: 13px; letter-spacing: 0.06em; color: #4a3828; }
+
+    /* Text below medal */
+    .medal-text {
+      text-align: center;
+      position: relative;
+    }
+
+    /* Color-dodge overlay — same treatment as S1/S2 */
+    .medal-text-overlay {
+      position: absolute;
+      inset: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+      mix-blend-mode: color-dodge;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .medal-title {
+      font-family: 'Bricolage Grotesque', sans-serif;
+      font-size: 56px;
+      font-weight: 400;
+      font-variation-settings: 'opsz' 14, 'wdth' 100;
+      color: #fff;
+      line-height: 1.1;
+      margin-bottom: 16px;
+    }
+
+    .medal-subtitle {
+      font-family: 'Inter', sans-serif;
+      font-size: 24px;
+      font-weight: 400;
+      color: #fff;
+      line-height: 1.6;
+    }
+
     .tail-spacer { height: 50vh; }
 
     /* SplitType character spans */
@@ -373,6 +548,42 @@
       </div>
     </section>
 
+    <!-- Section 6: Medal -->
+    <section class="section-6">
+      <div class="medal-scene" id="medal-scene">
+        <div class="medal-launch" id="medal-launch">
+          <div class="medal-coin" id="medal-coin">
+
+            <!-- Front face -->
+            <div class="medal-face coin-front">
+              <img src="./medal.svg" alt="Service Recognition Medal" class="medal-img" />
+              <div class="medal-shimmer" id="medal-shimmer"></div>
+            </div>
+
+            <!-- Back face -->
+            <div class="medal-face coin-back">
+              <img src="./back.png" alt="" class="medal-img" />
+              <div class="medal-back-text">
+                <div class="medal-back-label">Awarded to</div>
+                <div class="medal-back-name">Timothy Tan</div>
+                <div class="medal-back-desc">for completing</div>
+                <div class="medal-back-years">5 years</div>
+                <div class="medal-back-org">at DBS</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- Text below medal -->
+      <div class="medal-text" id="medal-text">
+        <img class="medal-text-overlay" src="./gal4.jpg" alt="" />
+        <p class="medal-title">Congratulations for Long Service Award</p>
+        <p class="medal-subtitle">for the early calls, the late emails, and the small wins we truly appreciate.<br>Thank you Tim!</p>
+      </div>
+    </section>
+
     <div class="tail-spacer"></div>
   </div>
 </div>
@@ -496,12 +707,11 @@ function initScrollExperience() {
   // Split text into chars
   const chars1 = splitRoots(Array.from(stage.querySelectorAll('.stage-out p')));
   const chars2 = splitRoots(Array.from(stage.querySelectorAll('.stage-in .blur-text-line')));
-  const chars3 = splitRoots([stage3Txt]);
 
   // ── Initial states ──────────────────────────────────────────────────────
   gsap.set(chars1, { filter: 'blur(0px) brightness(100%)', willChange: 'filter' });
   gsap.set(chars2, { filter: 'blur(10px) brightness(0%)',  willChange: 'filter' });
-  gsap.set(chars3, { filter: 'blur(10px) brightness(0%)',  willChange: 'filter' });
+  gsap.set(stage3Txt, { filter: 'blur(10px) brightness(0%)', opacity: 1, willChange: 'filter' });
 
   // Center glare + spark via GSAP (never use CSS translate on GSAP-animated elements)
   gsap.set(glarePng, { xPercent: -50, yPercent: -50, scale: 0, opacity: 0 });
@@ -538,9 +748,8 @@ function initScrollExperience() {
   // Fade out the S1/S2 overlay so it doesn't sit over S3
   tl.to(s12Overlay, { opacity: 0, duration: 0.4, ease: 'none' }, 4.1);
 
-  // Text blurs in char by char
-  if (chars3.length)
-    tl.to(chars3, { filter: 'blur(0px) brightness(100%)', stagger: 0.05, duration: 1, ease: 'none' }, 4.3);
+  // Stage 3 text blurs in as whole element (avoids SplitType conflict with live counter)
+  tl.to(stage3Txt, { filter: 'blur(0px) brightness(100%)', duration: 1, ease: 'none' }, 4.3);
 
   // Glare PNG rises in (scale + opacity)
   tl.to(glarePng, { scale: 1, opacity: 0.2, ease: 'power2.out', duration: 1 }, 4.5);
@@ -647,17 +856,167 @@ function initSection4() {
 
   const scrollerEl = LIFERAY_SCROLLER ? document.querySelector(LIFERAY_SCROLLER) : undefined;
 
-  // Whole section starts invisible, fades in as it enters viewport
-  gsap.set(s4, { opacity: 0 });
+  // Section 4 is always visible — no fade-in needed after pin releases.
+  // Only fade out as it leaves the viewport heading into Section 5.
+  gsap.to(s4, {
+    opacity: 0, duration: 0.6, ease: 'power2.in',
+    scrollTrigger: {
+      trigger: s4, start: 'bottom 60%',
+      toggleActions: 'play none none reverse',
+      ...(scrollerEl ? { scroller: scrollerEl } : {}),
+    },
+  });
+}
 
+// ─────────────────────────────────────────────────────────────────────────────
+// buildCoinEdges — stacks SVG copies along Z to fake medal thickness
+// edgeCount: number of layers   step: px gap between each layer
+// ─────────────────────────────────────────────────────────────────────────────
+function buildCoinEdges(coinSelector, edgeCount = 34, step = 1.2) {
+  const coinEl = document.querySelector(coinSelector);
+  if (!coinEl) return;
+
+  // Remove any old edges
+  coinEl.querySelectorAll('.coin-edge').forEach(e => e.remove());
+
+  for (let i = 0; i < edgeCount; i++) {
+    const edge = document.createElement('div');
+    edge.classList.add('coin-edge');
+
+    const img = document.createElement('img');
+    img.src = '/medal.svg';
+    img.alt = '';
+    edge.appendChild(img);
+
+    const offset = (i - edgeCount / 2) * step;
+    edge.style.transform = `translateZ(${offset}px)`;
+    coinEl.appendChild(edge);
+  }
+
+  // Push front + back faces outside the edge stack
+  const maxOffset = (edgeCount / 2) * step;
+  const front = coinEl.querySelector('.coin-front');
+  const back  = coinEl.querySelector('.coin-back');
+  if (front) front.style.transform = `rotateY(0deg) translateZ(${maxOffset}px)`;
+  if (back)  back.style.transform  = `rotateY(180deg) translateZ(${maxOffset}px)`;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Section 6 — Medal + text
+// ─────────────────────────────────────────────────────────────────────────────
+function initSection6() {
+  const s6          = document.querySelector('.section-6');
+  const medalScene  = document.getElementById('medal-scene');
+  const medalLaunch = document.getElementById('medal-launch');
+  const medalCoin   = document.getElementById('medal-coin');
+  const shimmerEl   = document.getElementById('medal-shimmer');
+  const medalText   = document.getElementById('medal-text');
+  const titleEl     = medalText.querySelector('.medal-title');
+  const subtitleEl  = medalText.querySelector('.medal-subtitle');
+  const frontFace   = medalCoin.querySelector('.coin-front');
+  const backFace    = medalCoin.querySelector('.coin-back');
+  if (!s6 || !medalScene) return;
+
+  // ── Smooth face visibility via cosine — replaces backface-visibility ─────
+  // cos(0°)=1 → front fully visible; cos(180°)=−1 → back fully visible
+  function updateFaceOpacity() {
+    const launchAngle = Number(gsap.getProperty(medalLaunch, 'rotateY')) || 0;
+    const flipOffset  = medalCoin.classList.contains('is-flipped') ? 180 : 0;
+    const norm = ((launchAngle + flipOffset) % 360 + 360) % 360;
+    const t = (Math.cos(norm * Math.PI / 180) + 1) / 2; // 0 → 1
+    frontFace.style.opacity = t;
+    backFace.style.opacity  = 1 - t;
+  }
+  // Set initial state
+  updateFaceOpacity();
+
+  const scrollerEl = LIFERAY_SCROLLER ? document.querySelector(LIFERAY_SCROLLER) : undefined;
+
+  // ── Build 3D coin edges — all visible, scaled uniformly with the medal ───
+  buildCoinEdges('#medal-coin', 34, 1.2);
+
+  // ── Split text into chars for blur-in ───────────────────────────────────
+  const titleChars    = splitRoots([titleEl]);
+  const subtitleChars = splitRoots([subtitleEl]);
+
+  // ── Initial states ───────────────────────────────────────────────────────
+  // Uniform 3D scale — scaleZ included so depth shrinks WITH size (GSAP's
+  // `scale` only sets X/Y; Z must be set explicitly or the edge stack stays
+  // full-depth at tiny sizes, creating a thin tall tower)
+  gsap.set(medalLaunch, { scale: 0.02, scaleZ: 0.02, rotateY: 0 });
+  gsap.set(titleChars,    { filter: 'blur(10px) brightness(0%)', willChange: 'filter' });
+  gsap.set(subtitleChars, { filter: 'blur(10px) brightness(0%)', willChange: 'filter' });
+
+  // ── Pinned scrub timeline ────────────────────────────────────────────────
   const stCfg = {
-    trigger: s4,
-    start: 'top 90%',
-    toggleActions: 'play none none none',
+    trigger: s6, start: 'top top',
+    end: '+=450%', pin: true, pinSpacing: true, scrub: 1,
+    onUpdate() {
+      updateFaceOpacity();
+    },
   };
   if (scrollerEl) stCfg.scroller = scrollerEl;
 
-  gsap.to(s4, { opacity: 1, duration: 0.8, ease: 'power2.out', scrollTrigger: stCfg });
+  const tl = gsap.timeline({ scrollTrigger: stCfg });
+
+  // Grow — scaleZ animates with scale so depth stays proportional
+  tl.to(medalLaunch, { scale: 1, scaleZ: 1, ease: 'power2.out', duration: 2 }, 0.0);
+
+  // Rotation phase 1 — FAST spin while small (0 → ~100px). 3 quick spins
+  // crammed into the first 0.35 units mask the layer-separation while tiny.
+  tl.to(medalLaunch, { rotateY: 1080, ease: 'power1.out', duration: 0.35 }, 0.0);
+
+  // Rotation phase 2 — SLOW single spin as it settles; lands on front face (1440 = 4×360)
+  tl.to(medalLaunch, { rotateY: 1440, ease: 'power1.out', duration: 1.65 }, 0.35);
+
+  // Title blurs in
+  tl.to(titleChars,    { filter: 'blur(0px) brightness(100%)', stagger: 0.03, duration: 1, ease: 'none' }, 1.5);
+
+  // Subtext blurs in
+  tl.to(subtitleChars, { filter: 'blur(0px) brightness(100%)', stagger: 0.015, duration: 1, ease: 'none' }, 2.0);
+
+  // Dead hold — users experience the full message
+  tl.to({}, { duration: 1.5 }, 3.0);
+
+  // ── Launch animation — commented out, preserved for future use ───────────
+  // ScrollTrigger.create({ trigger: s6, start: 'top 80%', onEnter() {
+  //   medalLaunch.classList.add('launch-active'); } });
+
+  // ── Click to flip ────────────────────────────────────────────────────────
+  medalScene.addEventListener('click', () => {
+    medalCoin.classList.toggle('is-flipped');
+    // Re-run face opacity after flip toggle (CSS transition handles smoothness)
+    setTimeout(updateFaceOpacity, 50);
+  });
+
+  // ── Mouse tilt + shimmer (only active once medal reaches full size) ──────
+  const MAX_TILT = 25;
+
+  medalScene.addEventListener('mousemove', (e) => {
+    // Only activate tilt after medal has grown to near full size
+    if (Number(gsap.getProperty(medalLaunch, 'scaleX')) < 0.9) return;
+
+    const rect = medalScene.getBoundingClientRect();
+    const cx = rect.left + rect.width  / 2;
+    const cy = rect.top  + rect.height / 2;
+    const dx = (e.clientX - cx) / (rect.width  / 2);
+    const dy = (e.clientY - cy) / (rect.height / 2);
+
+    const rx = -Math.max(-1, Math.min(1, dy)) * MAX_TILT;
+    const ry =  Math.max(-1, Math.min(1, dx)) * MAX_TILT;
+    medalScene.style.transform = `rotateX(${rx}deg) rotateY(${ry}deg)`;
+
+    const sx = ((e.clientX - rect.left) / rect.width)  * 100;
+    const sy = ((e.clientY - rect.top)  / rect.height) * 100;
+    shimmerEl.style.setProperty('--sx', `${sx}%`);
+    shimmerEl.style.setProperty('--sy', `${sy}%`);
+    shimmerEl.style.opacity = '1';
+  });
+
+  medalScene.addEventListener('mouseleave', () => {
+    medalScene.style.transform = 'rotateX(0deg) rotateY(0deg)';
+    shimmerEl.style.opacity = '0';
+  });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -669,6 +1028,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initSmoothScrolling();
     initScrollExperience();
     initSection4();
+    initSection6();
   });
 });
 </script>
