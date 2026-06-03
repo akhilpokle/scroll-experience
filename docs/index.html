@@ -146,27 +146,39 @@
     .glare-png { z-index: 8; }
     .spark-svg { z-index: 9; }
 
-    /* ── Section 4 ─────────────────────────────────────────────────────── */
+    /* ── Section 4 — perspective card fly-through ──────────────────────── */
     .section-4 {
       width: 100%;
+      height: 100vh;
       background: #000;
+      position: relative;
+      overflow: hidden;
+      perspective: 1200px;
     }
 
-    .s4-inner {
-      width: min(1100px, 90%);
-      margin: 0 auto;
+    /* 3D world that holds the cards */
+    .s4-3d-layer {
+      position: absolute;
+      inset: 0;
+      transform-style: preserve-3d;
+      pointer-events: none;
     }
 
-    /* Header — text centered with enough top padding to feel like a first viewport */
+    /* Fixed center text — outside the 3D transforms, always on top */
     .s4-header {
-      padding: 80px 0 48px;
+      position: absolute;
+      left: 50%; top: 50%;
+      transform: translate(-50%, -50%);
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       text-align: center;
       gap: 16px;
+      z-index: 50;
+      pointer-events: none;
     }
+
 
     .s4-count {
       font-family: 'Bricolage Grotesque', sans-serif;
@@ -183,36 +195,42 @@
       font-weight: 400;
       color: #fff;
       line-height: 1.5;
-      max-width: 640px;
+      max-width: 420px;
     }
 
-    .s4-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 24px;
-      padding-bottom: 120px;
-    }
-
-    .s4-box {
-      background: #1e1e1e;
+    /* Individual fly-through card — solid & opaque so cards occlude cleanly */
+    .s4-card {
+      position: absolute;
+      left: 50%; top: 50%;
+      width: 340px;
+      margin: -110px 0 0 -170px;   /* center the card on its 3D origin */
+      background: #2e2e2e;
       border-radius: 12px;
-      padding: 28px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      gap: 24px;
+      padding: 26px;
+      overflow: hidden;            /* clip the veil to rounded corners */
+      box-shadow: 0 24px 60px rgba(0,0,0,0.6);
+      will-change: transform, opacity;
     }
 
-    .s4-box-message {
+    /* Black depth veil — opacity drives "pitch black (far) → gray (near)" */
+    .s4-card-veil {
+      position: absolute;
+      inset: 0;
+      background: #000;
+      pointer-events: none;
+      will-change: opacity;
+    }
+
+    .s4-card-message {
       font-family: 'Inter', sans-serif;
       font-size: 15px;
-      font-weight: 400;
       font-style: italic;
       color: #fff;
       line-height: 1.7;
+      margin-bottom: 20px;
     }
 
-    .s4-box-author {
+    .s4-card-author {
       font-family: 'Inter', sans-serif;
       font-size: 14px;
       font-style: italic;
@@ -406,6 +424,41 @@
       line-height: 1.6;
     }
 
+    /* ── Section 7 — Write a letter ─────────────────────────────────────── */
+    .section-7 {
+      width: 100%;
+      height: 100vh;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .s7-inner {
+      text-align: center;
+      max-width: 720px;
+      padding: 0 24px;
+    }
+
+    .s7-title {
+      font-family: 'Bricolage Grotesque', sans-serif;
+      font-size: 56px;
+      font-weight: 400;
+      font-variation-settings: 'opsz' 14, 'wdth' 100;
+      color: #fff;
+      line-height: 1.1;
+      margin-bottom: 24px;
+    }
+
+    .s7-subtitle {
+      font-family: 'Inter', sans-serif;
+      font-size: 24px;
+      font-weight: 400;
+      color: #fff;
+      line-height: 1.5;
+    }
+
     .tail-spacer { height: 50vh; }
 
     /* SplitType character spans */
@@ -500,51 +553,15 @@
       </div>
 
     </section>
-    <!-- Section 4 -->
+    <!-- Section 4 — perspective card fly-through -->
     <section class="section-4">
-      <div class="s4-inner">
-        <div class="s4-header">
-          <p class="s4-count">127 times</p>
-          <p class="s4-subtitle">Your peers stopped what they were doing to say thank you to you</p>
-        </div>
-        <div class="s4-grid">
-          <div class="s4-box">
-            <p class="s4-box-message">I'm really glad to have not just the team, but also my extended teammates' support over the past 2 years. Thank you for always checking in, offering a listening ear, and for the invaluable candid conversations and trust you've extended. Your help has made a real difference for me at work. Thank you!</p>
-            <p class="s4-box-author">~ Placeholder Name</p>
-          </div>
-          <div class="s4-box">
-            <p class="s4-box-message">Thank you for being such an awesome team mate, friend and partner in all our shared projects. No matter the brief, you're always able to find the best creative references and travel inspiration in just minutes. Thanks for always holding space for conversations!</p>
-            <p class="s4-box-author">~ Placeholder Name</p>
-          </div>
-          <div class="s4-box">
-            <p class="s4-box-message">Your explorative, creative, and humorous spirit are much appreciated! Thanks for helping out at the 11th hour on the project. I know I can always come to you to get inspiration on the latest design trends and an honest, constructive critique of my designs. Glad to know you!</p>
-            <p class="s4-box-author">~ Placeholder Name</p>
-          </div>
-          <div class="s4-box">
-            <p class="s4-box-message">Thank you for the trust. I feel very honoured whenever you reach out to consult. I appreciate that you value my inputs. Your curiosity of the world is inspiring. Stay humble always!</p>
-            <p class="s4-box-author">~ Placeholder Name</p>
-          </div>
-          <div class="s4-box">
-            <p class="s4-box-message">Appreciate the trust with your questions — glad I could help out! It's always a pleasure working alongside someone who brings such genuine energy and care to everything they do.</p>
-            <p class="s4-box-author">~</p>
-          </div>
-          <div class="s4-box">
-            <p class="s4-box-message">A huge thank you for your outstanding support on the project! I'm so inspired by your consistent display of a growth mindset, which encourages continuous learning and improvement. I hope we get to work together again!</p>
-            <p class="s4-box-author">~ Placeholder Name</p>
-          </div>
-          <div class="s4-box">
-            <p class="s4-box-message">Thank you for the trust. I feel very honoured whenever you reach out to consult. I appreciate that you value my inputs. Your curiosity of the world is inspiring. Stay humble always!</p>
-            <p class="s4-box-author">~ Placeholder Name</p>
-          </div>
-          <div class="s4-box">
-            <p class="s4-box-message">Appreciate the trust with your questions — glad I could help out! Working with you has been one of the highlights of this year. Your dedication and warmth make every collaboration feel effortless.</p>
-            <p class="s4-box-author">~</p>
-          </div>
-          <div class="s4-box">
-            <p class="s4-box-message">It has been such a joy working with you. Your passion, thoughtfulness, and willingness to go the extra mile never go unnoticed. Thank you for always showing up with such a positive attitude and lifting everyone around you.</p>
-            <p class="s4-box-author">~ Placeholder Name</p>
-          </div>
-        </div>
+      <!-- 3D card layer (cards injected by JS) -->
+      <div class="s4-3d-layer" id="s4-3d-layer"></div>
+
+      <!-- Fixed center text — galaxy fills the glyphs (background-clip: text) -->
+      <div class="s4-header">
+        <p class="s4-count">127 times</p>
+        <p class="s4-subtitle">Your peers stopped what they were doing to say thank you</p>
       </div>
     </section>
 
@@ -581,6 +598,14 @@
         <img class="medal-text-overlay" src="./gal4.jpg" alt="" />
         <p class="medal-title">Congratulations for Long Service Award</p>
         <p class="medal-subtitle">for the early calls, the late emails, and the small wins we truly appreciate.<br>Thank you Tim!</p>
+      </div>
+    </section>
+
+    <!-- Section 7: Write a letter -->
+    <section class="section-7">
+      <div class="s7-inner">
+        <p class="s7-title">Write a letter to your future self!</p>
+        <p class="s7-subtitle">Write a letter to the version of you who'll be celebrating 10 years with DBS. We will keep it safe, they'll read it.</p>
       </div>
     </section>
 
@@ -851,21 +876,137 @@ function initScrollExperience() {
 //   2.8 – 4.0   dead hold
 // ─────────────────────────────────────────────────────────────────────────────
 function initSection4() {
-  const s4 = document.querySelector('.section-4');
-  if (!s4) return;
+  const s4    = document.querySelector('.section-4');
+  const layer = document.getElementById('s4-3d-layer');
+  if (!s4 || !layer) return;
 
   const scrollerEl = LIFERAY_SCROLLER ? document.querySelector(LIFERAY_SCROLLER) : undefined;
+  const rnd = gsap.utils.random;
 
-  // Section 4 is always visible — no fade-in needed after pin releases.
-  // Only fade out as it leaves the viewport heading into Section 5.
-  gsap.to(s4, {
-    opacity: 0, duration: 0.6, ease: 'power2.in',
-    scrollTrigger: {
-      trigger: s4, start: 'bottom 60%',
-      toggleActions: 'play none none reverse',
-      ...(scrollerEl ? { scroller: scrollerEl } : {}),
-    },
+  // ── 15 dummy testimonial cards ───────────────────────────────────────────
+  const messages = [
+    ["I'm really glad to have your support over the past 2 years. Thank you for always checking in and offering a listening ear.", "~ Rae Lee"],
+    ["Thank you for being such an awesome team mate and partner. You always find the best creative references in just minutes.", "~ Chris Hemsworth"],
+    ["Your explorative, creative, and humorous spirit are much appreciated! Thanks for helping out at the 11th hour.", "~ Timothy Tan"],
+    ["Thank you for the trust. I feel very honoured whenever you reach out to consult. Your curiosity is inspiring.", "~ L.M Gupta"],
+    ["Appreciate the trust with your questions — glad I could help out! Always a pleasure working alongside you.", "~"],
+    ["A huge thank you for your outstanding support on the project! I'm so inspired by your growth mindset.", "~ Sarah Chen"],
+    ["It has been such a joy working with you. Your passion and thoughtfulness never go unnoticed.", "~ David Kim"],
+    ["Working with you has been one of the highlights of this year. Your dedication makes every collab effortless.", "~"],
+    ["You bring such genuine energy and care to everything you do. Thank you for lifting everyone around you.", "~ Priya N"],
+    ["Thanks for always holding space for conversations and enabling those random food trips! You're the best.", "~ Marcus Lee"],
+    ["Your honest, constructive critique of my designs makes me want to be better at my craft every day.", "~ Aisha R"],
+    ["The way you show up with a positive attitude is contagious. Grateful to have you on the team.", "~ Tom Wright"],
+    ["Thank you for the invaluable candid conversations and trust you've extended over the years.", "~ Nina P"],
+    ["Looking at the beautiful prototype you designed makes me want to push my own work further. Inspiring!", "~ Kevin O"],
+    ["You made a significant impact on the project and I truly hope we get to work together again soon.", "~ Jess M"],
+  ];
+
+  // Assign cards to randomly-sized waves (1–4 cards each), max 4 per wave
+  const waves = [];
+  let idx = 0;
+  while (idx < messages.length) {
+    const size = Math.min(messages.length - idx, Math.round(rnd(1, 4)));
+    waves.push(Array.from({ length: size }, () => idx++));
+  }
+
+  // ── Build card DOM ────────────────────────────────────────────────────────
+  const cards = messages.map(([msg, author]) => {
+    const el = document.createElement('div');
+    el.className = 's4-card';
+    el.innerHTML =
+      `<p class="s4-card-message">${msg}</p><p class="s4-card-author">${author}</p>` +
+      `<div class="s4-card-veil"></div>`;
+    layer.appendChild(el);
+    return { el, veil: el.querySelector('.s4-card-veil'), x: 0, y: 0, rot: 0 };
   });
+
+  // ── Collision-free placement WITHIN each wave (cross-wave overlap is fine) ──
+  const MIN_DX = 370, MIN_DY = 240;     // min center spacing (card ≈ 340×200)
+  waves.forEach(wave => {
+    const placed = [];
+    wave.forEach(ci => {
+      let x, y, ok = false;
+      for (let tries = 0; tries < 60 && !ok; tries++) {
+        x = rnd(-650, 650);
+        y = rnd(-340, 340);
+        if (Math.abs(x) < 240) x += (x < 0 ? -240 : 240); // keep clear of center text
+        ok = placed.every(p => Math.abs(p.x - x) > MIN_DX || Math.abs(p.y - y) > MIN_DY);
+      }
+      placed.push({ x, y });
+      cards[ci].x = x;
+      cards[ci].y = y;
+      cards[ci].rot = rnd(-14, 14);
+    });
+  });
+
+  // Depth keyframes
+  const Z_START = -2200;   // deep parked origin (invisible)
+  const Z_FADE  = -1400;   // fade-in completes here (reaches the faint floor)
+  const Z_PAST  = 700;     // exit, past the camera
+
+  // Initial state: parked deep — opaque card fully veiled (pitch black)
+  cards.forEach(c => {
+    gsap.set(c.el, { x: c.x, y: c.y, z: Z_START, rotation: c.rot, opacity: 1 });
+    c.veil.style.opacity = 1;
+  });
+
+  const { mapRange, clamp } = gsap.utils;
+
+  // Black veil opacity by depth: pitch black far → gray near (gradual emerge)
+  function veilOpacity(z) {
+    if (z <= Z_START) return 1;                                  // parked: full black
+    if (z <= Z_FADE)  return mapRange(Z_START, Z_FADE, 1, 0.7, z); // gradual emerge from black
+    if (z <= 0)       return mapRange(Z_FADE, 0, 0.7, 0, z);       // brighten to full gray
+    return 0;                                                     // stays gray through exit
+  }
+  // Card stays fully opaque on approach (clean occlusion); only fades as it passes
+  function cardOpacity(z) {
+    return z <= 0 ? 1 : clamp(0, 1, mapRange(0, Z_PAST, 1, 0, z));
+  }
+
+  // ── Pinned scrub timeline ────────────────────────────────────────────────
+  // Continuous dolly: each wave's cards travel depth→past; STEP small enough
+  // that ~3 waves are in flight at once. Opacity is recomputed from live Z.
+  const STEP = 0.7;                  // smaller gap => more waves visible at once
+  const JOURNEY = 2.8;               // units for a card to go deep-origin → past
+  const total = 1 + (waves.length - 1) * STEP + JOURNEY + 0.5;
+  const stCfg = {
+    trigger: s4, start: 'top top',
+    end: '+=' + Math.round(total * 100) + '%',
+    pin: true, pinSpacing: true, scrub: 1,
+    onUpdate() {
+      // Drive each card's depth-darkness (veil) + exit fade from its current Z
+      cards.forEach(c => {
+        const z = Number(gsap.getProperty(c.el, 'z'));
+        c.veil.style.opacity = veilOpacity(z);
+        c.el.style.opacity   = cardOpacity(z);
+      });
+    },
+  };
+  if (scrollerEl) stCfg.scroller = scrollerEl;
+
+  const tl = gsap.timeline({ scrollTrigger: stCfg });
+
+  // ── Title + subtitle blur-in (like Sections 1 & 2) ────────────────────────
+  const titleChars    = splitRoots([s4.querySelector('.s4-count')]);
+  const subtitleChars = splitRoots([s4.querySelector('.s4-subtitle')]);
+  gsap.set(titleChars,    { filter: 'blur(10px) brightness(0%)', willChange: 'filter' });
+  gsap.set(subtitleChars, { filter: 'blur(10px) brightness(0%)', willChange: 'filter' });
+  tl.to(titleChars,    { filter: 'blur(0px) brightness(100%)', stagger: 0.04, duration: 1, ease: 'none' }, 0.0);
+  tl.to(subtitleChars, { filter: 'blur(0px) brightness(100%)', stagger: 0.02, duration: 1, ease: 'none' }, 0.3);
+
+  // ── Card dolly — each wave staggered, cards travel deep-origin → past ─────
+  waves.forEach((wave, w) => {
+    const start = 1 + w * STEP;
+    const waveCards = wave.map(ci => cards[ci].el);
+    tl.to(waveCards, { z: Z_PAST, ease: 'none', duration: JOURNEY }, start);
+  });
+
+  // ── Title + subtitle blur-out as the last wave clears (matches blur-in) ───
+  const lastEnd = 1 + (waves.length - 1) * STEP + JOURNEY;   // last card passes
+  tl.to(titleChars,    { filter: 'blur(10px) brightness(0%)', stagger: 0.03, duration: 1, ease: 'none' }, lastEnd - 1.2);
+  tl.to(subtitleChars, { filter: 'blur(10px) brightness(0%)', stagger: 0.02, duration: 1, ease: 'none' }, lastEnd - 1.0);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -950,7 +1091,7 @@ function initSection6() {
   // ── Pinned scrub timeline ────────────────────────────────────────────────
   const stCfg = {
     trigger: s6, start: 'top top',
-    end: '+=450%', pin: true, pinSpacing: true, scrub: 1,
+    end: '+=600%', pin: true, pinSpacing: true, scrub: 1,
     onUpdate() {
       updateFaceOpacity();
     },
@@ -977,6 +1118,14 @@ function initSection6() {
 
   // Dead hold — users experience the full message
   tl.to({}, { duration: 1.5 }, 3.0);
+
+  // ── Exit (4.5 → 5.5) ──────────────────────────────────────────────────────
+  // Text blurs out; in parallel the medal spins while fading away.
+  tl.to(titleChars,    { filter: 'blur(10px) brightness(0%)', stagger: 0.03, duration: 1, ease: 'none' }, 4.5);
+  tl.to(subtitleChars, { filter: 'blur(10px) brightness(0%)', stagger: 0.02, duration: 1, ease: 'none' }, 4.6);
+  tl.to(medalLaunch,   { opacity: 0, ease: 'power2.in', duration: 1 }, 4.5);   // fade
+  tl.to(medalLaunch,   { rotateY: 1800, ease: 'none', duration: 1 }, 4.5);     // spin (1440 → 1800)
+  tl.to({}, { duration: 0.5 }, 5.5);   // hold on black before pin releases
 
   // ── Launch animation — commented out, preserved for future use ───────────
   // ScrollTrigger.create({ trigger: s6, start: 'top 80%', onEnter() {
@@ -1020,6 +1169,32 @@ function initSection6() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Section 7 — Write a letter to your future self
+// Timeline: 0→1 blur in, 1→2.5 hold. Pin +=250%
+// ─────────────────────────────────────────────────────────────────────────────
+function initSection7() {
+  const s7 = document.querySelector('.section-7');
+  if (!s7) return;
+
+  const titleChars    = splitRoots([s7.querySelector('.s7-title')]);
+  const subtitleChars = splitRoots([s7.querySelector('.s7-subtitle')]);
+  gsap.set(titleChars,    { filter: 'blur(10px) brightness(0%)', willChange: 'filter' });
+  gsap.set(subtitleChars, { filter: 'blur(10px) brightness(0%)', willChange: 'filter' });
+
+  const scrollerEl = LIFERAY_SCROLLER ? document.querySelector(LIFERAY_SCROLLER) : undefined;
+  const stCfg = {
+    trigger: s7, start: 'top top',
+    end: '+=250%', pin: true, pinSpacing: true, scrub: 1,
+  };
+  if (scrollerEl) stCfg.scroller = scrollerEl;
+
+  const tl = gsap.timeline({ scrollTrigger: stCfg });
+  tl.to(titleChars,    { filter: 'blur(0px) brightness(100%)', stagger: 0.03, duration: 1, ease: 'none' }, 0.0);
+  tl.to(subtitleChars, { filter: 'blur(0px) brightness(100%)', stagger: 0.015, duration: 1, ease: 'none' }, 0.3);
+  tl.to({}, { duration: 1.5 }, 1.0);   // hold
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Boot
 // ─────────────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
@@ -1029,6 +1204,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initScrollExperience();
     initSection4();
     initSection6();
+    initSection7();
   });
 });
 </script>
