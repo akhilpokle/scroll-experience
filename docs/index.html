@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Interactive Scroll Experience</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=Inter:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=Inter:wght@400;500&family=Fraunces:ital,opsz,wght@1,9..144,400;1,9..144,500&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -189,6 +189,18 @@
       line-height: 1.1;
     }
 
+    /* Full-section galaxy color-dodge overlay (opacity timeline-driven) */
+    .s4-overlay {
+      position: absolute;
+      inset: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+      mix-blend-mode: color-dodge;
+      pointer-events: none;
+      opacity: 0;
+      z-index: 60;
+    }
+
     .s4-subtitle {
       font-family: 'Inter', sans-serif;
       font-size: 24px;
@@ -198,18 +210,105 @@
       max-width: 420px;
     }
 
-    /* Individual fly-through card — solid & opaque so cards occlude cleanly */
+    /* Fly-through card — styled from the Figma testimonial design */
     .s4-card {
       position: absolute;
       left: 50%; top: 50%;
-      width: 340px;
-      margin: -110px 0 0 -170px;   /* center the card on its 3D origin */
-      background: #2e2e2e;
-      border-radius: 12px;
-      padding: 26px;
-      overflow: hidden;            /* clip the veil to rounded corners */
-      box-shadow: 0 24px 60px rgba(0,0,0,0.6);
+      width: 360px;
+      margin: -95px 0 0 -180px;    /* approximate center on its 3D origin */
+      background: #1f1f1f;
+      padding: 18px 20px 16px;
+      overflow: hidden;
+      /* inset shadow draws the 3px border INSIDE the box so the veil can cover it */
+      box-shadow: inset 0 0 0 3px #3a3a3a, 0 24px 60px rgba(0,0,0,0.6);
       will-change: transform, opacity;
+    }
+
+    /* Subtle patterned texture behind the text */
+    .s4-card-texture {
+      position: absolute;
+      inset: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+      opacity: 0.5;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .s4-card-message {
+      position: relative;
+      z-index: 1;
+      font-family: 'Fraunces', Georgia, serif;
+      font-style: italic;
+      font-size: 14px;
+      color: #d7d7d7;
+      line-height: 21px;
+      margin-bottom: 14px;
+    }
+
+    /* Footer: avatar + author name */
+    .s4-card-footer {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .s4-card-avatar {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      border: 1px solid #fff;
+      object-fit: cover;
+      flex: none;
+    }
+
+    .s4-card-author {
+      font-family: 'Fraunces', Georgia, serif;
+      font-style: italic;
+      font-size: 14px;
+      color: #d7d7d7;
+    }
+
+    /* Red circular brand stamp, bottom-right (over the footer area) */
+    .s4-card-stamp {
+      position: absolute;
+      bottom: 10px; right: 12px;
+      width: 56px; height: 56px;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    /* Rainbow holographic shimmer — masked to the spark shapes, swept on scroll.
+       background-position (--sx) is driven per-card from its Z journey. */
+    .s4-card-shimmer {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      opacity: 0;                  /* JS drives opacity from depth (brighter near) */
+      mix-blend-mode: color-dodge;
+      /* Narrow rainbow band (~6% of the 300% gradient ≈ 3-4 spark columns) */
+      background-image: linear-gradient(
+        110deg,
+        transparent 47%,
+        hsl(0 90% 60%)   48%,
+        hsl(55 90% 60%)  49%,
+        hsl(130 90% 60%) 50%,
+        hsl(210 90% 60%) 51%,
+        hsl(290 90% 60%) 52%,
+        transparent 53%
+      );
+      background-size: 300% 100%;
+      background-repeat: no-repeat;
+      background-position: var(--sx, 135%) 0;
+      -webkit-mask-image: url(./card-sparks-mask.svg);
+      mask-image: url(./card-sparks-mask.svg);
+      -webkit-mask-size: cover;
+      mask-size: cover;
+      -webkit-mask-position: center;
+      mask-position: center;
+      will-change: background-position, opacity;
     }
 
     /* Black depth veil — opacity drives "pitch black (far) → gray (near)" */
@@ -218,24 +317,8 @@
       inset: 0;
       background: #000;
       pointer-events: none;
+      z-index: 2;
       will-change: opacity;
-    }
-
-    .s4-card-message {
-      font-family: 'Inter', sans-serif;
-      font-size: 15px;
-      font-style: italic;
-      color: #fff;
-      line-height: 1.7;
-      margin-bottom: 20px;
-    }
-
-    .s4-card-author {
-      font-family: 'Inter', sans-serif;
-      font-size: 14px;
-      font-style: italic;
-      color: #fff;
-      opacity: 0.7;
     }
 
     /* S1/S2 galaxy overlay */
@@ -558,11 +641,14 @@
       <!-- 3D card layer (cards injected by JS) -->
       <div class="s4-3d-layer" id="s4-3d-layer"></div>
 
-      <!-- Fixed center text — galaxy fills the glyphs (background-clip: text) -->
+      <!-- Fixed center text -->
       <div class="s4-header">
         <p class="s4-count">127 times</p>
         <p class="s4-subtitle">Your peers stopped what they were doing to say thank you</p>
       </div>
+
+      <!-- Galaxy color-dodge overlay — only visible during text in/out (hidden while cards fly) -->
+      <img class="s4-overlay" id="s4-overlay" src="./gal4.jpg" alt="" />
     </section>
 
     <!-- Section 6: Medal -->
@@ -910,15 +996,28 @@ function initSection4() {
     waves.push(Array.from({ length: size }, () => idx++));
   }
 
-  // ── Build card DOM ────────────────────────────────────────────────────────
+  // ── Build card DOM (styled from the Figma testimonial design) ─────────────
   const cards = messages.map(([msg, author]) => {
+    const name = author.replace(/^~\s*/, '').trim() || 'Anonymous';
     const el = document.createElement('div');
     el.className = 's4-card';
     el.innerHTML =
-      `<p class="s4-card-message">${msg}</p><p class="s4-card-author">${author}</p>` +
+      `<img class="s4-card-texture" src="./card-texture.svg" alt="" />` +
+      `<div class="s4-card-shimmer"></div>` +
+      `<img class="s4-card-stamp" src="./card-stamp.png" alt="" />` +
+      `<p class="s4-card-message">${msg}</p>` +
+      `<div class="s4-card-footer">` +
+        `<img class="s4-card-avatar" src="./card-avatar.png" alt="" />` +
+        `<span class="s4-card-author">${name}</span>` +
+      `</div>` +
       `<div class="s4-card-veil"></div>`;
     layer.appendChild(el);
-    return { el, veil: el.querySelector('.s4-card-veil'), x: 0, y: 0, rot: 0 };
+    return {
+      el,
+      veil: el.querySelector('.s4-card-veil'),
+      shimmer: el.querySelector('.s4-card-shimmer'),
+      x: 0, y: 0, rot: 0,
+    };
   });
 
   // ── Collision-free placement WITHIN each wave (cross-wave overlap is fine) ──
@@ -945,10 +1044,11 @@ function initSection4() {
   const Z_FADE  = -1400;   // fade-in completes here (reaches the faint floor)
   const Z_PAST  = 700;     // exit, past the camera
 
-  // Initial state: parked deep — opaque card fully veiled (pitch black)
+  // Initial state: parked deep — opaque card fully veiled (pitch black), no shine
   cards.forEach(c => {
     gsap.set(c.el, { x: c.x, y: c.y, z: Z_START, rotation: c.rot, opacity: 1 });
     c.veil.style.opacity = 1;
+    c.shimmer.style.opacity = 0;
   });
 
   const { mapRange, clamp } = gsap.utils;
@@ -970,17 +1070,23 @@ function initSection4() {
   // that ~3 waves are in flight at once. Opacity is recomputed from live Z.
   const STEP = 0.7;                  // smaller gap => more waves visible at once
   const JOURNEY = 2.8;               // units for a card to go deep-origin → past
-  const total = 1 + (waves.length - 1) * STEP + JOURNEY + 0.5;
+  // lastEnd + re-show(0.4) + blur-out(1.0) + hold(0.5)
+  const total = 1 + (waves.length - 1) * STEP + JOURNEY + 1.9;
   const stCfg = {
     trigger: s4, start: 'top top',
     end: '+=' + Math.round(total * 100) + '%',
     pin: true, pinSpacing: true, scrub: 1,
     onUpdate() {
-      // Drive each card's depth-darkness (veil) + exit fade from its current Z
+      // Drive each card's depth-darkness (veil), exit fade, and rainbow sweep from Z
       cards.forEach(c => {
         const z = Number(gsap.getProperty(c.el, 'z'));
         c.veil.style.opacity = veilOpacity(z);
         c.el.style.opacity   = cardOpacity(z);
+        // Rainbow band sweeps right→left over a tight Z window (fast swipe)
+        const sx = clamp(-35, 135, mapRange(-1600, 100, 135, -35, z));
+        c.shimmer.style.setProperty('--sx', sx + '%');
+        // Shine brighter the closer the card is to the camera (z → 0)
+        c.shimmer.style.opacity = clamp(0, 0.4, mapRange(Z_START, 0, 0, 0.4, z));
       });
     },
   };
@@ -1003,10 +1109,17 @@ function initSection4() {
     tl.to(waveCards, { z: Z_PAST, ease: 'none', duration: JOURNEY }, start);
   });
 
-  // ── Title + subtitle blur-out as the last wave clears (matches blur-in) ───
-  const lastEnd = 1 + (waves.length - 1) * STEP + JOURNEY;   // last card passes
-  tl.to(titleChars,    { filter: 'blur(10px) brightness(0%)', stagger: 0.03, duration: 1, ease: 'none' }, lastEnd - 1.2);
-  tl.to(subtitleChars, { filter: 'blur(10px) brightness(0%)', stagger: 0.02, duration: 1, ease: 'none' }, lastEnd - 1.0);
+  // ── Galaxy color-dodge overlay: visible for text in/out, hidden while cards fly ──
+  const overlay = document.getElementById('s4-overlay');
+  gsap.set(overlay, { opacity: 0 });
+  tl.to(overlay, { opacity: 1, ease: 'none', duration: 0.5 }, 0.0);   // appear with text-in
+  tl.to(overlay, { opacity: 0, ease: 'none', duration: 0.4 }, 1.0);   // hide as first cards emerge
+
+  // ── After all cards have left frame: re-show galaxy, then blur the text out ──
+  const lastEnd = 1 + (waves.length - 1) * STEP + JOURNEY;   // last card fully gone
+  tl.to(overlay, { opacity: 1, ease: 'none', duration: 0.4 }, lastEnd);
+  tl.to(titleChars,    { filter: 'blur(10px) brightness(0%)', stagger: 0.03, duration: 1, ease: 'none' }, lastEnd + 0.4);
+  tl.to(subtitleChars, { filter: 'blur(10px) brightness(0%)', stagger: 0.02, duration: 1, ease: 'none' }, lastEnd + 0.6);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
