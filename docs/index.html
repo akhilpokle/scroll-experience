@@ -5,8 +5,23 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Interactive Scroll Experience</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=Inter:wght@400;500&family=Fraunces:ital,opsz,wght@1,9..144,400;1,9..144,500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=Inter:ital,wght@0,300..800;1,300..800&family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=Fragment+Mono:ital@1&family=Space+Grotesk:wght@300..700&family=Hanken+Grotesk:ital,wght@0,100..900;1,100..900&family=Geist:wght@100..900&family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+  <!-- Fontshare fonts for the type playground -->
+  <link href="https://api.fontshare.com/v2/css?f[]=clash-display@200,300,400,500,600,700&f[]=general-sans@200,300,400,500,600,700&f[]=gambetta@400,500,600,700&display=swap" rel="stylesheet" />
   <style>
+    /* ── Font system — live-editable via the top-right control panel ─────── */
+    :root {
+      --font-display: 'Times New Roman', Times, serif;
+      --font-body:    'Inter', sans-serif;
+      --font-quote:   'Fraunces', Georgia, serif;
+      --weight-display: 300;
+      --weight-body:    300;
+      --weight-quote:   300;
+      --style-display: normal;
+      --style-body:    normal;
+      --style-quote:   italic;
+    }
+
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     body { background: #000; }
@@ -21,8 +36,10 @@
     .scroll-container {
       width: 100%;
       background-color: #000;
-      color: #ffffff;
-      font-family: 'Bricolage Grotesque', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+      color: #fff;
+      font-family: var(--font-display);
+      font-weight: var(--weight-display);
+      font-style: var(--style-display);
     }
 
     .intro-stage {
@@ -37,28 +54,26 @@
       position: absolute;
       inset: 0;
       background: #000;
-      font-family: 'Bricolage Grotesque', sans-serif;
-      font-weight: 400;
-      line-height: normal;
+      font-family: var(--font-display);
+      font-weight: var(--weight-display);
+      line-height: 1.2;
       color: white;
       white-space: nowrap;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      text-align: center;
     }
 
-    .stage-out p {
-      position: absolute;
+    .s1-subtext {
+      font-size: 24px;
+      font-family: var(--font-body);
+      font-weight: var(--weight-body);
+      font-style: var(--style-body);
     }
-
-    .stage-out p:first-child {
-      left: calc(50% - 142px);
-      font-size: 32px;
-      top: calc(50% - 62px);
-    }
-
-    .stage-out p:last-child {
-      left: calc(50% - 326px);
-      font-size: 48px;
-      top: calc(50% + 1px);
-    }
+    .s1-title   { font-size: 48px; }
 
     /* Stage 2 */
     .stage-in {
@@ -74,9 +89,15 @@
       line-height: 1.2;
     }
 
-    .blur-text-line:nth-child(1) { font-size: 48px; margin-bottom: 0.5rem; }
-    .blur-text-line:nth-child(2) { font-size: 64px; margin-bottom: 0.5rem; }
-    .blur-text-line:nth-child(3) { font-size: 48px; }
+    .blur-text-line.s2-subtext {
+      font-size: 24px;
+      margin-bottom: 0.75rem;
+      font-family: var(--font-body);
+      font-weight: var(--weight-body);
+      font-style: var(--style-body);
+    }
+    .blur-text-line.s2-title   { font-size: 48px; }
+    .s2-ital { font-style: italic; }
 
     /* Stage 3 */
     .stage-3 {
@@ -115,7 +136,7 @@
       z-index: 10;
       text-align: center;
       font-size: 48px;
-      font-weight: 400;
+      font-weight: var(--weight-display);
       font-variation-settings: 'opsz' 14, 'wdth' 100;
       white-space: nowrap;
     }
@@ -181,9 +202,9 @@
 
 
     .s4-count {
-      font-family: 'Bricolage Grotesque', sans-serif;
-      font-size: 56px;
-      font-weight: 400;
+      font-family: var(--font-display);
+      font-size: 48px;
+      font-weight: var(--weight-display);
       font-variation-settings: 'opsz' 14, 'wdth' 100;
       color: #fff;
       line-height: 1.1;
@@ -202,9 +223,10 @@
     }
 
     .s4-subtitle {
-      font-family: 'Inter', sans-serif;
+      font-family: var(--font-body);
       font-size: 24px;
-      font-weight: 400;
+      font-weight: var(--weight-body);
+      font-style: var(--style-body);
       color: #fff;
       line-height: 1.5;
       max-width: 420px;
@@ -224,35 +246,36 @@
       will-change: transform, opacity;
     }
 
-    /* Subtle patterned texture behind the text */
-    .s4-card-texture {
+    /* Faint white shimmer that sweeps along the card border */
+    .s4-card-shine {
       position: absolute;
       inset: 0;
-      width: 100%; height: 100%;
-      object-fit: cover;
-      opacity: 0.5;
+      z-index: 3;
+      padding: 3px;                  /* matches the 3px border ring */
       pointer-events: none;
-      z-index: 0;
+      background: linear-gradient(115deg,
+        transparent 42%,
+        rgba(255,255,255,0.55) 50%,
+        transparent 58%);
+      background-size: 250% 100%;
+      background-repeat: no-repeat;
+      background-position: var(--shine, 140%) 0;
+      /* Two-layer mask trick — show the gradient only on the 3px border frame */
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      mask-composite: exclude;
+      will-change: background-position;
     }
 
-    .s4-card-message {
+    /* Header: avatar + author name, at the TOP */
+    .s4-card-header {
       position: relative;
-      z-index: 1;
-      font-family: 'Fraunces', Georgia, serif;
-      font-style: italic;
-      font-size: 14px;
-      color: #d7d7d7;
-      line-height: 21px;
-      margin-bottom: 14px;
-    }
-
-    /* Footer: avatar + author name */
-    .s4-card-footer {
-      position: relative;
-      z-index: 1;
+      z-index: 2;
       display: flex;
       align-items: center;
       gap: 10px;
+      margin-bottom: 14px;
     }
 
     .s4-card-avatar {
@@ -261,13 +284,45 @@
       border: 1px solid #fff;
       object-fit: cover;
       flex: none;
+      transform: scaleX(-1);    /* flipped, per design */
     }
 
     .s4-card-author {
-      font-family: 'Fraunces', Georgia, serif;
-      font-style: italic;
+      font-family: var(--font-quote);
+      font-style: var(--style-quote);
+      font-weight: var(--weight-quote);
       font-size: 14px;
       color: #d7d7d7;
+    }
+
+    .s4-card-message {
+      position: relative;
+      z-index: 2;
+      font-family: var(--font-quote);
+      font-style: var(--style-quote);
+      font-weight: var(--weight-quote);
+      font-size: 14px;
+      color: #d7d7d7;
+      line-height: 21px;
+      min-height: 63px;          /* guarantee at least 3 lines (3 × 21px) */
+    }
+
+    /* Invisible float that carves the bottom-right so the last lines clear the
+       stamp. Its height is set per-card by JS (= message height). Staircase
+       polygon: 3rd-last line clears 64px (→256px wide), last 2 clear 72px (→248px). */
+    .s4-msg-cut {
+      float: right;
+      width: 72px;
+      height: 0;                 /* JS sets this to the message height */
+      shape-outside: polygon(
+        100% 0,
+        100% 100%,
+        0 100%,
+        0 calc(100% - 42px),
+        11.11% calc(100% - 42px),
+        11.11% calc(100% - 63px),
+        100% calc(100% - 63px)
+      );
     }
 
     /* Red circular brand stamp, bottom-right (over the footer area) */
@@ -279,45 +334,13 @@
       pointer-events: none;
     }
 
-    /* Rainbow holographic shimmer — masked to the spark shapes, swept on scroll.
-       background-position (--sx) is driven per-card from its Z journey. */
-    .s4-card-shimmer {
-      position: absolute;
-      inset: 0;
-      z-index: 1;
-      pointer-events: none;
-      opacity: 0;                  /* JS drives opacity from depth (brighter near) */
-      mix-blend-mode: color-dodge;
-      /* Narrow rainbow band (~6% of the 300% gradient ≈ 3-4 spark columns) */
-      background-image: linear-gradient(
-        110deg,
-        transparent 47%,
-        hsl(0 90% 60%)   48%,
-        hsl(55 90% 60%)  49%,
-        hsl(130 90% 60%) 50%,
-        hsl(210 90% 60%) 51%,
-        hsl(290 90% 60%) 52%,
-        transparent 53%
-      );
-      background-size: 300% 100%;
-      background-repeat: no-repeat;
-      background-position: var(--sx, 135%) 0;
-      -webkit-mask-image: url(./card-sparks-mask.svg);
-      mask-image: url(./card-sparks-mask.svg);
-      -webkit-mask-size: cover;
-      mask-size: cover;
-      -webkit-mask-position: center;
-      mask-position: center;
-      will-change: background-position, opacity;
-    }
-
     /* Black depth veil — opacity drives "pitch black (far) → gray (near)" */
     .s4-card-veil {
       position: absolute;
       inset: 0;
       background: #000;
       pointer-events: none;
-      z-index: 2;
+      z-index: 4;
       will-change: opacity;
     }
 
@@ -344,6 +367,10 @@
       gap: 48px;
       overflow: hidden;
     }
+
+    /* Plain 2D fade wrapper — no perspective/preserve-3d, so fading its opacity
+       does NOT flatten the 3D medal inside it. */
+    .medal-fade { will-change: opacity; }
 
     /* Perspective root — mouse tilt applied here */
     .medal-scene {
@@ -389,21 +416,23 @@
       transform: rotateY(180deg) !important;
     }
 
-    /* Shared face styles */
+    /* Shared face styles — backface-visibility hides away-facing layers (works
+       on <img> faces), so the flip can't show mirrored front content. */
     .medal-face {
       position: absolute;
       inset: 0;
       transform-style: preserve-3d;
-      /* backface-visibility removed — SVG filters break it;
-         opacity is controlled via JS cosine curve instead */
-      transition: opacity 0.06s linear;
+      -webkit-backface-visibility: hidden;
+      backface-visibility: hidden;
     }
 
     /* Face transforms — overridden by buildCoinEdges() at runtime */
     .coin-front { transform: translateZ(1px); }
     .coin-back  { transform: rotateY(180deg) translateZ(1px); z-index: 1; }
 
-    /* Coin edge layers — SVG img inside, darkened for rim appearance */
+    /* Coin edge layers — solid textless clover, shown from BOTH sides so the
+       thickness stays visible on front, back, and through the exit spin.
+       (No backface-visibility — there's no text to mirror.) */
     .coin-edge {
       position: absolute;
       inset: 0;
@@ -461,7 +490,7 @@
       justify-content: center;
       pointer-events: none;
       color: #3d2f24;
-      font-family: 'Bricolage Grotesque', Georgia, serif;
+      font-family: var(--font-display);
       text-align: center;
       padding: 24px;
     }
@@ -490,9 +519,9 @@
     }
 
     .medal-title {
-      font-family: 'Bricolage Grotesque', sans-serif;
-      font-size: 56px;
-      font-weight: 400;
+      font-family: var(--font-display);
+      font-size: 48px;
+      font-weight: var(--weight-display);
       font-variation-settings: 'opsz' 14, 'wdth' 100;
       color: #fff;
       line-height: 1.1;
@@ -500,9 +529,10 @@
     }
 
     .medal-subtitle {
-      font-family: 'Inter', sans-serif;
+      font-family: var(--font-body);
       font-size: 24px;
-      font-weight: 400;
+      font-weight: var(--weight-body);
+      font-style: var(--style-body);
       color: #fff;
       line-height: 1.6;
     }
@@ -525,9 +555,9 @@
     }
 
     .s7-title {
-      font-family: 'Bricolage Grotesque', sans-serif;
-      font-size: 56px;
-      font-weight: 400;
+      font-family: var(--font-display);
+      font-size: 48px;
+      font-weight: var(--weight-display);
       font-variation-settings: 'opsz' 14, 'wdth' 100;
       color: #fff;
       line-height: 1.1;
@@ -535,9 +565,10 @@
     }
 
     .s7-subtitle {
-      font-family: 'Inter', sans-serif;
+      font-family: var(--font-body);
       font-size: 24px;
-      font-weight: 400;
+      font-weight: var(--weight-body);
+      font-style: var(--style-body);
       color: #fff;
       line-height: 1.5;
     }
@@ -546,9 +577,84 @@
 
     /* SplitType character spans */
     .char { display: inline-block; }
+
+    /* ── Font playground panel ──────────────────────────────────────────── */
+    #font-panel {
+      position: fixed;
+      top: 16px; right: 16px;
+      width: 280px;
+      z-index: 99999;
+      background: rgba(20, 20, 22, 0.92);
+      backdrop-filter: blur(8px);
+      border: 1px solid #333;
+      border-radius: 10px;
+      color: #e8e8e8;
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 12px;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+      user-select: none;
+    }
+    .fp-head {
+      display: flex; align-items: center; justify-content: flex-end;
+      padding: 8px 10px;
+    }
+    #font-panel.collapsed .fp-head { border-bottom: none; }
+    .fp-head button {
+      width: 22px; height: 22px;
+      border: 1px solid #444; border-radius: 5px;
+      background: #2a2a2a; color: #ddd; cursor: pointer;
+      line-height: 1; font-size: 14px;
+    }
+    .fp-body { padding: 10px 12px; display: flex; flex-direction: column; gap: 12px; }
+    #font-panel.collapsed .fp-body { display: none; }
+
+    .fp-group { display: flex; flex-direction: column; gap: 6px; }
+    .fp-group > label { font-weight: 600; color: #9a9aff; }
+    .fp-row { display: flex; gap: 6px; }
+    .fp-row select {
+      flex: 1; min-width: 0;
+      background: #1c1c1e; color: #e8e8e8;
+      border: 1px solid #3a3a3a; border-radius: 5px;
+      padding: 4px 6px; font-size: 11px; font-family: inherit;
+      cursor: pointer;
+    }
+    .fp-row select.fp-w { flex: 0 0 64px; }
+    .fp-row select.fp-s { flex: 0 0 70px; }
+
+    .fp-add { display: flex; gap: 6px; border-top: 1px solid #2c2c2c; padding-top: 10px; }
+    .fp-add input {
+      flex: 1; min-width: 0;
+      background: #1c1c1e; color: #e8e8e8;
+      border: 1px solid #3a3a3a; border-radius: 5px;
+      padding: 5px 7px; font-size: 11px; font-family: inherit;
+    }
+    #font-panel .fp-body > button,
+    .fp-add button {
+      background: #2a2a2a; color: #ddd; cursor: pointer;
+      border: 1px solid #444; border-radius: 5px;
+      padding: 6px 8px; font-size: 11px; font-family: inherit;
+    }
+    #font-panel .fp-body > button:hover,
+    .fp-add button:hover { background: #353535; }
   </style>
 </head>
 <body>
+
+<!-- ── Font playground control panel (dev tool — remove before production) ── -->
+<div id="font-panel">
+  <div class="fp-head">
+    <button id="fp-toggle" type="button">–</button>
+  </div>
+  <div class="fp-body" id="fp-body">
+    <!-- groups injected by JS -->
+    <div class="fp-add">
+      <input id="fp-add-input" type="text" placeholder="Add Google Font name…" />
+      <button id="fp-add-btn" type="button">Add</button>
+    </div>
+    <button id="fp-copy" type="button">Copy settings</button>
+    <button id="fp-reset" type="button">Reset</button>
+  </div>
+</div>
 
 <div class="ise-outer">
   <div class="scroll-container">
@@ -556,8 +662,8 @@
 
       <!-- Stage 1: greeting -->
       <div class="stage-out">
-        <p style="font-variation-settings:'opsz' 14,'wdth' 100">Hello Timothy Tan!</p>
-        <p style="font-variation-settings:'opsz' 14,'wdth' 100">We wanted to say Thank you!</p>
+        <p class="s1-subtext" style="font-variation-settings:'opsz' 14,'wdth' 100">Hello Timothy Tan,</p>
+        <p class="s1-title" style="font-variation-settings:'opsz' 14,'wdth' 100">We have something special for you</p>
       </div>
 
       <!-- S1/S2 galaxy overlay — multiply blends galaxy texture onto white text -->
@@ -566,9 +672,8 @@
       <!-- Stage 2: thank-you text -->
       <div class="stage-in">
         <div class="stage-in-text">
-          <div class="blur-text-line">Thank you! for</div>
-          <div class="blur-text-line">5 years</div>
-          <div class="blur-text-line">With DBS</div>
+          <div class="blur-text-line s2-subtext">Thank you!</div>
+          <div class="blur-text-line s2-title">for <span class="s2-ital">5 years</span> with DBS.</div>
         </div>
       </div>
 
@@ -653,6 +758,8 @@
 
     <!-- Section 6: Medal -->
     <section class="section-6">
+      <!-- Plain 2D wrapper — fading THIS keeps the inner 3D intact (no flatten) -->
+      <div class="medal-fade" id="medal-fade">
       <div class="medal-scene" id="medal-scene">
         <div class="medal-launch" id="medal-launch">
           <div class="medal-coin" id="medal-coin">
@@ -677,6 +784,7 @@
 
           </div>
         </div>
+      </div>
       </div>
 
       <!-- Text below medal -->
@@ -1002,23 +1110,40 @@ function initSection4() {
     const el = document.createElement('div');
     el.className = 's4-card';
     el.innerHTML =
-      `<img class="s4-card-texture" src="./card-texture.svg" alt="" />` +
-      `<div class="s4-card-shimmer"></div>` +
-      `<img class="s4-card-stamp" src="./card-stamp.png" alt="" />` +
-      `<p class="s4-card-message">${msg}</p>` +
-      `<div class="s4-card-footer">` +
+      `<div class="s4-card-shine"></div>` +
+      `<div class="s4-card-header">` +
         `<img class="s4-card-avatar" src="./card-avatar.png" alt="" />` +
         `<span class="s4-card-author">${name}</span>` +
       `</div>` +
+      `<p class="s4-card-message"><i class="s4-msg-cut"></i>“${msg}”</p>` +
+      `<img class="s4-card-stamp" src="./card-stamp.png" alt="" />` +
       `<div class="s4-card-veil"></div>`;
     layer.appendChild(el);
     return {
       el,
       veil: el.querySelector('.s4-card-veil'),
-      shimmer: el.querySelector('.s4-card-shimmer'),
+      shine: el.querySelector('.s4-card-shine'),
+      cut:  el.querySelector('.s4-msg-cut'),
+      msg:  el.querySelector('.s4-card-message'),
       x: 0, y: 0, rot: 0,
     };
   });
+
+  // ── Set each card's bottom-right clearance height = its message height ────
+  // (cards are a fixed 360px wide, so this only needs re-running when the
+  // quote font finishes loading — not on resize.)
+  function shapeCards() {
+    cards.forEach(c => {
+      if (!c.cut || !c.msg) return;
+      c.cut.style.height = '0px';                 // measure without the carve
+      let h = c.msg.offsetHeight;
+      c.cut.style.height = h + 'px';              // apply carve (may add a line)
+      h = c.msg.offsetHeight;                     // re-measure
+      c.cut.style.height = h + 'px';              // converge
+    });
+  }
+  shapeCards();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(shapeCards);
 
   // ── Collision-free placement WITHIN each wave (cross-wave overlap is fine) ──
   const MIN_DX = 370, MIN_DY = 240;     // min center spacing (card ≈ 340×200)
@@ -1044,11 +1169,10 @@ function initSection4() {
   const Z_FADE  = -1400;   // fade-in completes here (reaches the faint floor)
   const Z_PAST  = 700;     // exit, past the camera
 
-  // Initial state: parked deep — opaque card fully veiled (pitch black), no shine
+  // Initial state: parked deep — opaque card fully veiled (pitch black)
   cards.forEach(c => {
     gsap.set(c.el, { x: c.x, y: c.y, z: Z_START, rotation: c.rot, opacity: 1 });
     c.veil.style.opacity = 1;
-    c.shimmer.style.opacity = 0;
   });
 
   const { mapRange, clamp } = gsap.utils;
@@ -1082,11 +1206,9 @@ function initSection4() {
         const z = Number(gsap.getProperty(c.el, 'z'));
         c.veil.style.opacity = veilOpacity(z);
         c.el.style.opacity   = cardOpacity(z);
-        // Rainbow band sweeps right→left over a tight Z window (fast swipe)
-        const sx = clamp(-35, 135, mapRange(-1600, 100, 135, -35, z));
-        c.shimmer.style.setProperty('--sx', sx + '%');
-        // Shine brighter the closer the card is to the camera (z → 0)
-        c.shimmer.style.opacity = clamp(0, 0.4, mapRange(Z_START, 0, 0, 0.4, z));
+        // Faint white shimmer sweeps along the border as the card travels
+        const shine = clamp(-40, 140, mapRange(-1600, 100, 140, -40, z));
+        c.shine.style.setProperty('--shine', shine + '%');
       });
     },
   };
@@ -1138,7 +1260,7 @@ function buildCoinEdges(coinSelector, edgeCount = 34, step = 1.2) {
     edge.classList.add('coin-edge');
 
     const img = document.createElement('img');
-    img.src = '/medal.svg';
+    img.src = "./medal-edge.svg";   // solid, textless clover — safe to show from both sides
     img.alt = '';
     edge.appendChild(img);
 
@@ -1171,18 +1293,9 @@ function initSection6() {
   const backFace    = medalCoin.querySelector('.coin-back');
   if (!s6 || !medalScene) return;
 
-  // ── Smooth face visibility via cosine — replaces backface-visibility ─────
-  // cos(0°)=1 → front fully visible; cos(180°)=−1 → back fully visible
-  function updateFaceOpacity() {
-    const launchAngle = Number(gsap.getProperty(medalLaunch, 'rotateY')) || 0;
-    const flipOffset  = medalCoin.classList.contains('is-flipped') ? 180 : 0;
-    const norm = ((launchAngle + flipOffset) % 360 + 360) % 360;
-    const t = (Math.cos(norm * Math.PI / 180) + 1) / 2; // 0 → 1
-    frontFace.style.opacity = t;
-    backFace.style.opacity  = 1 - t;
-  }
-  // Set initial state
-  updateFaceOpacity();
+  // Face visibility is handled purely by CSS backface-visibility — when the
+  // coin flips, away-facing layers (front + edges) auto-hide, so only the
+  // correctly-oriented back face shows. No JS opacity juggling needed.
 
   const scrollerEl = LIFERAY_SCROLLER ? document.querySelector(LIFERAY_SCROLLER) : undefined;
 
@@ -1205,9 +1318,6 @@ function initSection6() {
   const stCfg = {
     trigger: s6, start: 'top top',
     end: '+=600%', pin: true, pinSpacing: true, scrub: 1,
-    onUpdate() {
-      updateFaceOpacity();
-    },
   };
   if (scrollerEl) stCfg.scroller = scrollerEl;
 
@@ -1236,8 +1346,10 @@ function initSection6() {
   // Text blurs out; in parallel the medal spins while fading away.
   tl.to(titleChars,    { filter: 'blur(10px) brightness(0%)', stagger: 0.03, duration: 1, ease: 'none' }, 4.5);
   tl.to(subtitleChars, { filter: 'blur(10px) brightness(0%)', stagger: 0.02, duration: 1, ease: 'none' }, 4.6);
-  tl.to(medalLaunch,   { opacity: 0, ease: 'power2.in', duration: 1 }, 4.5);   // fade
-  tl.to(medalLaunch,   { rotateY: 1800, ease: 'none', duration: 1 }, 4.5);     // spin (1440 → 1800)
+  // Fade the 2D wrapper (keeps the inner 3D intact — no flatten)
+  tl.to('#medal-fade', { opacity: 0, ease: 'power2.in', duration: 1 }, 4.5);
+  // Full spin while fading — thickness/offset stays visible the whole time now
+  tl.to(medalLaunch,   { rotateY: 1800, ease: 'none', duration: 1 }, 4.5);
   tl.to({}, { duration: 0.5 }, 5.5);   // hold on black before pin releases
 
   // ── Launch animation — commented out, preserved for future use ───────────
@@ -1247,8 +1359,6 @@ function initSection6() {
   // ── Click to flip ────────────────────────────────────────────────────────
   medalScene.addEventListener('click', () => {
     medalCoin.classList.toggle('is-flipped');
-    // Re-run face opacity after flip toggle (CSS transition handles smoothness)
-    setTimeout(updateFaceOpacity, 50);
   });
 
   // ── Mouse tilt + shimmer (only active once medal reaches full size) ──────
@@ -1308,10 +1418,160 @@ function initSection7() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Font playground — live type controls (dev tool)
+// ─────────────────────────────────────────────────────────────────────────────
+function initFontPanel() {
+  const root = document.documentElement;
+  const body = document.getElementById('fp-body');
+  if (!body) return;
+
+  // Shared font list (any font usable in any role)
+  let FONTS = [
+    { label: 'Bricolage Grotesque', css: "'Bricolage Grotesque', sans-serif" },
+    { label: 'Space Grotesk',       css: "'Space Grotesk', sans-serif" },
+    { label: 'Hanken Grotesk',      css: "'Hanken Grotesk', sans-serif" },
+    { label: 'Inter',               css: "'Inter', sans-serif" },
+    { label: 'Geist',               css: "'Geist', sans-serif" },
+    { label: 'Clash Display',       css: "'Clash Display', sans-serif" },
+    { label: 'General Sans',        css: "'General Sans', sans-serif" },
+    { label: 'Fraunces',            css: "'Fraunces', Georgia, serif" },
+    { label: 'Newsreader',          css: "'Newsreader', Georgia, serif" },
+    { label: 'Instrument Serif',    css: "'Instrument Serif', Georgia, serif" },
+    { label: 'Gambetta',            css: "'Gambetta', Georgia, serif" },
+    { label: 'Times New Roman',     css: "'Times New Roman', Times, serif" },
+  ];
+  const WEIGHTS = ['300', '400', '500', '600', '700', '800'];
+  const STYLES  = ['normal', 'italic'];
+
+  const GROUPS = [
+    { key: 'display', label: 'Display (headings)', vf: '--font-display', vw: '--weight-display', vs: '--style-display',
+      def: { font: "'Times New Roman', Times, serif", weight: '300', style: 'normal' } },
+    { key: 'body', label: 'Body (subtitles)', vf: '--font-body', vw: '--weight-body', vs: '--style-body',
+      def: { font: "'Inter', sans-serif", weight: '300', style: 'normal' } },
+    { key: 'quote', label: 'Card quote', vf: '--font-quote', vw: '--weight-quote', vs: '--style-quote',
+      def: { font: "'Fraunces', Georgia, serif", weight: '300', style: 'italic' } },
+  ];
+
+  const LS_KEY = 'fontPlayground_v2';
+  const saved = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
+
+  const opt = (val, label, sel) =>
+    `<option value="${val.replace(/"/g, '&quot;')}"${val === sel ? ' selected' : ''}>${label || val}</option>`;
+
+  // Build a group's row markup
+  function groupHTML(g) {
+    const cur = saved[g.key] || g.def;
+    const fams = FONTS.map(f => opt(f.css, f.label, cur.font)).join('');
+    const wts  = WEIGHTS.map(w => opt(w, w, cur.weight)).join('');
+    const sts  = STYLES.map(s => opt(s, s, cur.style)).join('');
+    return `<div class="fp-group" data-key="${g.key}">
+      <label>${g.label}</label>
+      <div class="fp-row">
+        <select class="fp-f">${fams}</select>
+        <select class="fp-s">${sts}</select>
+        <select class="fp-w">${wts}</select>
+      </div>
+    </div>`;
+  }
+
+  // Inject groups before the .fp-add block
+  const addBlock = body.querySelector('.fp-add');
+  GROUPS.forEach(g => addBlock.insertAdjacentHTML('beforebegin', groupHTML(g)));
+
+  function apply(g, font, weight, style) {
+    root.style.setProperty(g.vf, font);
+    root.style.setProperty(g.vw, weight);
+    root.style.setProperty(g.vs, style);
+  }
+  function persist() {
+    const data = {};
+    GROUPS.forEach(g => {
+      const el = body.querySelector(`.fp-group[data-key="${g.key}"]`);
+      data[g.key] = {
+        font:   el.querySelector('.fp-f').value,
+        weight: el.querySelector('.fp-w').value,
+        style:  el.querySelector('.fp-s').value,
+      };
+    });
+    localStorage.setItem(LS_KEY, JSON.stringify(data));
+  }
+
+  // Apply saved/default + wire change handlers
+  GROUPS.forEach(g => {
+    const cur = saved[g.key] || g.def;
+    apply(g, cur.font, cur.weight, cur.style);
+    const el = body.querySelector(`.fp-group[data-key="${g.key}"]`);
+    el.querySelectorAll('select').forEach(sel => {
+      sel.addEventListener('change', () => {
+        apply(g, el.querySelector('.fp-f').value, el.querySelector('.fp-w').value, el.querySelector('.fp-s').value);
+        persist();
+      });
+    });
+  });
+
+  // ── Hot-add a Google Font by name ────────────────────────────────────────
+  document.getElementById('fp-add-btn').addEventListener('click', () => {
+    const input = document.getElementById('fp-add-input');
+    const name = input.value.trim();
+    if (!name) return;
+    const fam = name.replace(/\s+/g, '+');
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = `https://fonts.googleapis.com/css2?family=${fam}:ital,wght@0,300..800;1,300..800&display=swap`;
+    link.onerror = () => { link.href = `https://fonts.googleapis.com/css2?family=${fam}&display=swap`; };
+    document.head.appendChild(link);
+
+    const css = `'${name}', sans-serif`;
+    if (!FONTS.some(f => f.label === name)) FONTS.push({ label: name + ' ✦', css });
+    // Append to every family dropdown
+    body.querySelectorAll('.fp-f').forEach(sel => {
+      sel.insertAdjacentHTML('beforeend', opt(css, name + ' ✦', sel.value));
+    });
+    input.value = '';
+  });
+
+  // ── Copy current settings (paste back to bake them in) ───────────────────
+  document.getElementById('fp-copy').addEventListener('click', async () => {
+    const lines = GROUPS.flatMap(g => {
+      const el = body.querySelector(`.fp-group[data-key="${g.key}"]`);
+      return [
+        `${g.vf}: ${el.querySelector('.fp-f').value};`,
+        `${g.vw}: ${el.querySelector('.fp-w').value};`,
+        `${g.vs}: ${el.querySelector('.fp-s').value};`,
+      ];
+    });
+    const text = ':root {\n  ' + lines.join('\n  ') + '\n}';
+    try { await navigator.clipboard.writeText(text); } catch (e) {}
+    const btn = document.getElementById('fp-copy');
+    btn.textContent = 'Copied!'; setTimeout(() => (btn.textContent = 'Copy settings'), 1200);
+  });
+
+  // ── Reset to defaults ────────────────────────────────────────────────────
+  document.getElementById('fp-reset').addEventListener('click', () => {
+    localStorage.removeItem(LS_KEY);
+    GROUPS.forEach(g => {
+      apply(g, g.def.font, g.def.weight, g.def.style);
+      const el = body.querySelector(`.fp-group[data-key="${g.key}"]`);
+      el.querySelector('.fp-f').value = g.def.font;
+      el.querySelector('.fp-w').value = g.def.weight;
+      el.querySelector('.fp-s').value = g.def.style;
+    });
+  });
+
+  // ── Collapse toggle ──────────────────────────────────────────────────────
+  document.getElementById('fp-toggle').addEventListener('click', () => {
+    const panel = document.getElementById('font-panel');
+    panel.classList.toggle('collapsed');
+    document.getElementById('fp-toggle').textContent = panel.classList.contains('collapsed') ? '+' : '–';
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Boot
 // ─────────────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   gsap.registerPlugin(ScrollTrigger);
+  initFontPanel();
   requestAnimationFrame(() => {
     initSmoothScrolling();
     initScrollExperience();
