@@ -1,0 +1,1545 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Interactive Scroll Experience</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=Inter:ital,wght@0,300..800;1,300..800&family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=Fragment+Mono:ital@1&family=Space+Grotesk:wght@300..700&family=Hanken+Grotesk:ital,wght@0,100..900;1,100..900&family=Geist:wght@100..900&family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+  <!-- Fontshare fonts for the type playground -->
+  <link href="https://api.fontshare.com/v2/css?f[]=clash-display@200,300,400,500,600,700&f[]=general-sans@200,300,400,500,600,700&f[]=gambetta@400,500,600,700&display=swap" rel="stylesheet" />
+  <style>
+    /* ── Font system — live-editable via the top-right control panel ─────── */
+    :root {
+      --font-display: 'Times New Roman', Times, serif;
+      --font-body:    'Inter', sans-serif;
+      --font-quote:   'Fraunces', Georgia, serif;
+      --weight-display: 300;
+      --weight-body:    300;
+      --weight-quote:   300;
+      --style-display: normal;
+      --style-body:    normal;
+      --style-quote:   italic;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body { background: #000; }
+
+    .ise-outer {
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+      background-color: #000;
+    }
+
+    .scroll-container {
+      width: 100%;
+      background-color: #000;
+      color: #fff;
+      font-family: var(--font-display);
+      font-weight: var(--weight-display);
+      font-style: var(--style-display);
+    }
+
+    .intro-stage {
+      width: 100%;
+      height: 100vh;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Stage 1 */
+    .stage-out {
+      position: absolute;
+      inset: 0;
+      background: #000;
+      font-family: var(--font-display);
+      font-weight: var(--weight-display);
+      line-height: normal;
+      color: white;
+      white-space: nowrap;
+    }
+
+    .stage-out p {
+      position: absolute;
+    }
+
+    .stage-out p:first-child {
+      left: calc(50% - 142px);
+      font-size: 32px;
+      top: calc(50% - 62px);
+    }
+
+    .stage-out p:last-child {
+      left: calc(50% - 326px);
+      font-size: 48px;
+      top: calc(50% + 1px);
+    }
+
+    /* Stage 2 */
+    .stage-in {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .stage-in-text {
+      text-align: center;
+      line-height: 1.2;
+    }
+
+    .blur-text-line:nth-child(1) { font-size: 48px; margin-bottom: 0.5rem; }
+    .blur-text-line:nth-child(2) { font-size: 64px; margin-bottom: 0.5rem; }
+    .blur-text-line:nth-child(3) { font-size: 48px; }
+
+    /* Stage 3 */
+    .stage-3 {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .glare-png {
+      position: absolute;
+      left: 50%; top: 50%;
+      width: 766px; height: 744px;
+      mix-blend-mode: screen;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .spark-svg {
+      position: absolute;
+      left: 50%; top: 50%;
+      width: 375px; height: 377px;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .spark-svg svg {
+      width: 100%; height: 100%;
+      display: block;
+      overflow: visible;
+    }
+
+    .stage-3-text {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+      font-size: 48px;
+      font-weight: var(--weight-display);
+      font-variation-settings: 'opsz' 14, 'wdth' 100;
+      white-space: nowrap;
+    }
+
+    /* Galaxy layers */
+    .gal-layer {
+      position: absolute;
+      left: 50%; top: 50%;
+      pointer-events: none;
+    }
+
+    #gal-bg {
+      object-fit: cover;
+      z-index: 4;
+    }
+
+    #gal-far, #gal-mid, #gal-near {
+      width: 4096px; height: 4096px;
+      object-fit: cover;
+      object-position: center;
+    }
+
+    #gal-far  { z-index: 5; }
+    #gal-mid  { z-index: 6; }
+    #gal-near { z-index: 7; }
+
+    /* Glare + spark sit above galaxy layers */
+    .glare-png { z-index: 8; }
+    .spark-svg { z-index: 9; }
+
+    /* ── Section 4 — perspective card fly-through ──────────────────────── */
+    .section-4 {
+      width: 100%;
+      height: 100vh;
+      background: #000;
+      position: relative;
+      overflow: hidden;
+      perspective: 1200px;
+    }
+
+    /* 3D world that holds the cards */
+    .s4-3d-layer {
+      position: absolute;
+      inset: 0;
+      transform-style: preserve-3d;
+      pointer-events: none;
+    }
+
+    /* Fixed center text — outside the 3D transforms, always on top */
+    .s4-header {
+      position: absolute;
+      left: 50%; top: 50%;
+      transform: translate(-50%, -50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 16px;
+      z-index: 50;
+      pointer-events: none;
+    }
+
+
+    .s4-count {
+      font-family: var(--font-display);
+      font-size: 48px;
+      font-weight: var(--weight-display);
+      font-variation-settings: 'opsz' 14, 'wdth' 100;
+      color: #fff;
+      line-height: 1.1;
+    }
+
+    /* Full-section galaxy color-dodge overlay (opacity timeline-driven) */
+    .s4-overlay {
+      position: absolute;
+      inset: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+      mix-blend-mode: color-dodge;
+      pointer-events: none;
+      opacity: 0;
+      z-index: 60;
+    }
+
+    .s4-subtitle {
+      font-family: var(--font-body);
+      font-size: 24px;
+      font-weight: var(--weight-body);
+      font-style: var(--style-body);
+      color: #fff;
+      line-height: 1.5;
+      max-width: 420px;
+    }
+
+    /* Fly-through card — styled from the Figma testimonial design */
+    .s4-card {
+      position: absolute;
+      left: 50%; top: 50%;
+      width: 360px;
+      margin: -95px 0 0 -180px;    /* approximate center on its 3D origin */
+      background: #1f1f1f;
+      padding: 18px 20px 16px;
+      overflow: hidden;
+      /* inset shadow draws the 3px border INSIDE the box so the veil can cover it */
+      box-shadow: inset 0 0 0 3px #3a3a3a, 0 24px 60px rgba(0,0,0,0.6);
+      will-change: transform, opacity;
+    }
+
+    /* Faint white shimmer that sweeps along the card border */
+    .s4-card-shine {
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+      padding: 3px;                  /* matches the 3px border ring */
+      pointer-events: none;
+      background: linear-gradient(115deg,
+        transparent 42%,
+        rgba(255,255,255,0.55) 50%,
+        transparent 58%);
+      background-size: 250% 100%;
+      background-repeat: no-repeat;
+      background-position: var(--shine, 140%) 0;
+      /* Two-layer mask trick — show the gradient only on the 3px border frame */
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      mask-composite: exclude;
+      will-change: background-position;
+    }
+
+    /* Header: avatar + author name, at the TOP */
+    .s4-card-header {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .s4-card-avatar {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      border: 1px solid #fff;
+      object-fit: cover;
+      flex: none;
+      transform: scaleX(-1);    /* flipped, per design */
+    }
+
+    .s4-card-author {
+      font-family: var(--font-quote);
+      font-style: var(--style-quote);
+      font-weight: var(--weight-quote);
+      font-size: 14px;
+      color: #d7d7d7;
+    }
+
+    .s4-card-message {
+      position: relative;
+      z-index: 2;
+      font-family: var(--font-quote);
+      font-style: var(--style-quote);
+      font-weight: var(--weight-quote);
+      font-size: 14px;
+      color: #d7d7d7;
+      line-height: 21px;
+    }
+
+    /* Red circular brand stamp, bottom-right (over the footer area) */
+    .s4-card-stamp {
+      position: absolute;
+      bottom: 10px; right: 12px;
+      width: 56px; height: 56px;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    /* Black depth veil — opacity drives "pitch black (far) → gray (near)" */
+    .s4-card-veil {
+      position: absolute;
+      inset: 0;
+      background: #000;
+      pointer-events: none;
+      z-index: 4;
+      will-change: opacity;
+    }
+
+    /* S1/S2 galaxy overlay */
+    #s12-overlay {
+      position: absolute;
+      inset: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+      mix-blend-mode: color-dodge;
+      pointer-events: none;
+      z-index: 3;
+    }
+
+    /* ── Section 6: Medal ───────────────────────────────────────────────── */
+    .section-6 {
+      width: 100%;
+      height: 100vh;
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 48px;
+      overflow: hidden;
+    }
+
+    /* Plain 2D fade wrapper — no perspective/preserve-3d, so fading its opacity
+       does NOT flatten the 3D medal inside it. */
+    .medal-fade { will-change: opacity; }
+
+    /* Perspective root — mouse tilt applied here */
+    .medal-scene {
+      perspective: 1000px;
+      width: 320px;
+      height: 321px;
+      cursor: pointer;
+      transform-style: preserve-3d;
+      transition: transform 0.15s ease-out;
+    }
+
+    /* Launch animation wrapper */
+    .medal-launch {
+      width: 100%;
+      height: 100%;
+      transform-style: preserve-3d;
+    }
+
+    /* LAUNCH ANIMATION — commented out, preserved for future use
+    .medal-launch.launch-active {
+      animation: medalLaunch 3.2s linear both;
+    }
+
+    @keyframes medalLaunch {
+      0%   { transform: translateY(370px) scale(0.05) rotateY(0deg);
+             animation-timing-function: cubic-bezier(0.2, 0.7, 0.5, 1); }
+      35%  { transform: translateY(-80px) scale(0.9) rotateY(1080deg);
+             animation-timing-function: cubic-bezier(0.5, 0, 0.8, 0.4); }
+      100% { transform: translateY(0) scale(1) rotateY(1800deg); }
+    }
+    */
+
+    /* Flip wrapper */
+    .medal-coin {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 2.8s ease-in-out;
+    }
+
+    .medal-coin.is-flipped {
+      transform: rotateY(180deg) !important;
+    }
+
+    /* Shared face styles — backface-visibility hides away-facing layers (works
+       on <img> faces), so the flip can't show mirrored front content. */
+    .medal-face {
+      position: absolute;
+      inset: 0;
+      transform-style: preserve-3d;
+      -webkit-backface-visibility: hidden;
+      backface-visibility: hidden;
+    }
+
+    /* Face transforms — overridden by buildCoinEdges() at runtime */
+    .coin-front { transform: translateZ(1px); }
+    .coin-back  { transform: rotateY(180deg) translateZ(1px); z-index: 1; }
+
+    /* Coin edge layers — solid textless clover, shown from BOTH sides so the
+       thickness stays visible on front, back, and through the exit spin.
+       (No backface-visibility — there's no text to mirror.) */
+    .coin-edge {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    /* Edges fully opaque — 34 medal-shaped copies stack into a solid mass;
+       the SVG's own transparent background keeps the clover silhouette */
+    .coin-edge img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      opacity: 1;
+    }
+
+    .medal-img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    /* Shimmer overlay — warm radial gradient masked by shimmer.png */
+    .medal-shimmer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background-image: radial-gradient(circle at center,
+        rgba(255,248,220,0.95) 0%,
+        rgba(255,230,170,0.6)  35%,
+        rgba(255,210,130,0)    70%);
+      -webkit-mask-image: url(./shimmer.png);
+      mask-image: url(./shimmer.png);
+      -webkit-mask-repeat: no-repeat;
+      mask-repeat: no-repeat;
+      -webkit-mask-size: 180% 180%;
+      mask-size: 180% 180%;
+      -webkit-mask-position: var(--sx, 50%) var(--sy, 50%);
+      mask-position: var(--sx, 50%) var(--sy, 50%);
+      mix-blend-mode: screen;
+      opacity: 0;
+      transition: opacity 0.25s ease-out;
+    }
+
+    /* Back face inscription */
+    .medal-back-text {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      color: #3d2f24;
+      font-family: var(--font-display);
+      text-align: center;
+      padding: 24px;
+    }
+
+    .medal-back-label  { font-size: 11px; letter-spacing: 0.32em; text-transform: uppercase; margin-bottom: 10px; color: #5b4636; }
+    .medal-back-name   { font-size: 22px; font-weight: 600; margin-bottom: 10px; color: #2e2118; }
+    .medal-back-desc   { font-size: 13px; letter-spacing: 0.06em; color: #4a3828; }
+    .medal-back-years  { font-size: 22px; font-weight: 600; margin: 6px 0; color: #2e2118; }
+    .medal-back-org    { font-size: 13px; letter-spacing: 0.06em; color: #4a3828; }
+
+    /* Text below medal */
+    .medal-text {
+      text-align: center;
+      position: relative;
+    }
+
+    /* Color-dodge overlay — same treatment as S1/S2 */
+    .medal-text-overlay {
+      position: absolute;
+      inset: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+      mix-blend-mode: color-dodge;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .medal-title {
+      font-family: var(--font-display);
+      font-size: 48px;
+      font-weight: var(--weight-display);
+      font-variation-settings: 'opsz' 14, 'wdth' 100;
+      color: #fff;
+      line-height: 1.1;
+      margin-bottom: 16px;
+    }
+
+    .medal-subtitle {
+      font-family: var(--font-body);
+      font-size: 24px;
+      font-weight: var(--weight-body);
+      font-style: var(--style-body);
+      color: #fff;
+      line-height: 1.6;
+    }
+
+    /* ── Section 7 — Write a letter ─────────────────────────────────────── */
+    .section-7 {
+      width: 100%;
+      height: 100vh;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .s7-inner {
+      text-align: center;
+      max-width: 720px;
+      padding: 0 24px;
+    }
+
+    .s7-title {
+      font-family: var(--font-display);
+      font-size: 48px;
+      font-weight: var(--weight-display);
+      font-variation-settings: 'opsz' 14, 'wdth' 100;
+      color: #fff;
+      line-height: 1.1;
+      margin-bottom: 24px;
+    }
+
+    .s7-subtitle {
+      font-family: var(--font-body);
+      font-size: 24px;
+      font-weight: var(--weight-body);
+      font-style: var(--style-body);
+      color: #fff;
+      line-height: 1.5;
+    }
+
+    .tail-spacer { height: 50vh; }
+
+    /* SplitType character spans */
+    .char { display: inline-block; }
+
+    /* ── Font playground panel ──────────────────────────────────────────── */
+    #font-panel {
+      position: fixed;
+      top: 16px; right: 16px;
+      width: 280px;
+      z-index: 99999;
+      background: rgba(20, 20, 22, 0.92);
+      backdrop-filter: blur(8px);
+      border: 1px solid #333;
+      border-radius: 10px;
+      color: #e8e8e8;
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 12px;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+      user-select: none;
+    }
+    .fp-head {
+      display: flex; align-items: center; justify-content: flex-end;
+      padding: 8px 10px;
+    }
+    #font-panel.collapsed .fp-head { border-bottom: none; }
+    .fp-head button {
+      width: 22px; height: 22px;
+      border: 1px solid #444; border-radius: 5px;
+      background: #2a2a2a; color: #ddd; cursor: pointer;
+      line-height: 1; font-size: 14px;
+    }
+    .fp-body { padding: 10px 12px; display: flex; flex-direction: column; gap: 12px; }
+    #font-panel.collapsed .fp-body { display: none; }
+
+    .fp-group { display: flex; flex-direction: column; gap: 6px; }
+    .fp-group > label { font-weight: 600; color: #9a9aff; }
+    .fp-row { display: flex; gap: 6px; }
+    .fp-row select {
+      flex: 1; min-width: 0;
+      background: #1c1c1e; color: #e8e8e8;
+      border: 1px solid #3a3a3a; border-radius: 5px;
+      padding: 4px 6px; font-size: 11px; font-family: inherit;
+      cursor: pointer;
+    }
+    .fp-row select.fp-w { flex: 0 0 64px; }
+    .fp-row select.fp-s { flex: 0 0 70px; }
+
+    .fp-add { display: flex; gap: 6px; border-top: 1px solid #2c2c2c; padding-top: 10px; }
+    .fp-add input {
+      flex: 1; min-width: 0;
+      background: #1c1c1e; color: #e8e8e8;
+      border: 1px solid #3a3a3a; border-radius: 5px;
+      padding: 5px 7px; font-size: 11px; font-family: inherit;
+    }
+    #font-panel .fp-body > button,
+    .fp-add button {
+      background: #2a2a2a; color: #ddd; cursor: pointer;
+      border: 1px solid #444; border-radius: 5px;
+      padding: 6px 8px; font-size: 11px; font-family: inherit;
+    }
+    #font-panel .fp-body > button:hover,
+    .fp-add button:hover { background: #353535; }
+  </style>
+</head>
+<body>
+
+<!-- ── Font playground control panel (dev tool — remove before production) ── -->
+<div id="font-panel">
+  <div class="fp-head">
+    <button id="fp-toggle" type="button">–</button>
+  </div>
+  <div class="fp-body" id="fp-body">
+    <!-- groups injected by JS -->
+    <div class="fp-add">
+      <input id="fp-add-input" type="text" placeholder="Add Google Font name…" />
+      <button id="fp-add-btn" type="button">Add</button>
+    </div>
+    <button id="fp-copy" type="button">Copy settings</button>
+    <button id="fp-reset" type="button">Reset</button>
+  </div>
+</div>
+
+<div class="ise-outer">
+  <div class="scroll-container">
+    <section class="intro-stage">
+
+      <!-- Stage 1: greeting -->
+      <div class="stage-out">
+        <p style="font-variation-settings:'opsz' 14,'wdth' 100">Hello Timothy Tan!</p>
+        <p style="font-variation-settings:'opsz' 14,'wdth' 100">We wanted to say Thank you!</p>
+      </div>
+
+      <!-- S1/S2 galaxy overlay — multiply blends galaxy texture onto white text -->
+      <img id="s12-overlay" src="/gal4.jpg" alt="" />
+
+      <!-- Stage 2: thank-you text -->
+      <div class="stage-in">
+        <div class="stage-in-text">
+          <div class="blur-text-line">Thank you! for</div>
+          <div class="blur-text-line">5 years</div>
+          <div class="blur-text-line">With DBS</div>
+        </div>
+      </div>
+
+      <!-- Stage 3: "That's 1 day with DBS" + spark + glare -->
+      <div class="stage-3">
+        <!-- Glare PNG — colorful starburst ring, screen blend -->
+        <img class="glare-png" id="glare-png" src="/glare.png" alt="" />
+
+        <!-- Spark SVG — X shape, inlined so SVG filters render correctly -->
+        <div class="spark-svg" id="spark-svg">
+          <svg viewBox="0 0 458 430" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <g filter="url(#s3_f0)">
+              <path fill-rule="evenodd" clip-rule="evenodd" d="M308.252 293.074L234.727 241.624C234.727 241.624 224.655 233.375 214.247 234.286C203.735 235.206 195.248 245.078 195.248 245.078L131.795 308.512L131.558 308.332L183.019 234.807C183.019 234.807 191.249 224.768 190.327 214.234C189.415 203.805 179.566 195.337 179.566 195.337L116.115 131.813L116.313 131.553L189.823 183.068C189.823 183.068 199.897 191.337 210.409 190.417C220.817 189.507 229.302 179.614 229.302 179.614L292.77 116.115L293.079 116.393L241.502 189.919C241.502 189.919 233.336 199.963 234.248 210.392C235.17 220.925 244.956 229.388 244.956 229.388L308.515 292.83L308.252 293.074Z" fill="#DB3D25"/>
+            </g>
+            <g filter="url(#s3_f1)">
+              <path fill-rule="evenodd" clip-rule="evenodd" d="M341.063 298.66L270.429 249.233C270.429 249.233 260.753 241.309 250.754 242.184C240.655 243.068 232.502 252.551 232.502 252.551L171.545 313.491L171.317 313.319L220.754 242.685C220.754 242.685 228.661 233.04 227.775 222.921C226.899 212.902 217.437 204.767 217.437 204.767L156.481 143.741L156.672 143.491L227.29 192.98C227.29 192.98 236.968 200.924 247.067 200.041C257.066 199.166 265.217 189.662 265.217 189.662L326.19 128.66L326.486 128.928L276.938 199.562C276.938 199.562 269.093 209.211 269.969 219.23C270.854 229.349 280.255 237.479 280.255 237.479L341.315 298.426L341.063 298.66Z" fill="url(#s3_grad)"/>
+            </g>
+            <g opacity="0.9" filter="url(#s3_f2)">
+              <path fill-rule="evenodd" clip-rule="evenodd" d="M349.631 337.531L254.956 258.136C254.956 258.136 242.13 245.614 227.745 245.614C213.215 245.614 200.389 258.136 200.389 258.136L105.743 337.531L105.439 337.256L184.848 242.581C184.848 242.581 197.342 229.799 197.342 215.24C197.342 200.826 184.848 188.029 184.848 188.029L105.439 93.2814L105.743 92.9492L200.389 172.43C200.389 172.43 213.215 184.981 227.745 184.981C242.13 184.981 254.956 172.43 254.956 172.43L349.631 92.9492L350.021 93.3681L270.453 188.029C270.453 188.029 258.047 200.826 258.047 215.24C258.047 229.799 270.453 242.581 270.453 242.581L350.021 337.228L349.631 337.531Z" fill="white"/>
+            </g>
+            <defs>
+              <filter id="s3_f0" x="-0.000259399" y="-0.000259399" width="424.631" height="424.627" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+                <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+                <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+                <feGaussianBlur stdDeviation="58.0577" result="effect1_foregroundBlur"/>
+              </filter>
+              <filter id="s3_f1" x="40.365" y="12.5447" width="417.065" height="417.061" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+                <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+                <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+                <feGaussianBlur stdDeviation="58.0577" result="effect1_foregroundBlur"/>
+              </filter>
+              <filter id="s3_f2" x="89.5859" y="77.0957" width="276.289" height="276.289" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+                <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+                <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+                <feGaussianBlur stdDeviation="7.92676" result="effect1_foregroundBlur"/>
+                <feTurbulence type="fractalNoise" baseFrequency="1.5138585567474365 1.5138585567474365" stitchTiles="stitch" numOctaves="3" result="noise" seed="4961"/>
+                <feColorMatrix in="noise" type="luminanceToAlpha" result="alphaNoise"/>
+                <feComponentTransfer in="alphaNoise" result="coloredNoise1">
+                  <feFuncA type="discrete" tableValues="1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0"/>
+                </feComponentTransfer>
+                <feComposite operator="in" in2="effect1_foregroundBlur" in="coloredNoise1" result="noise1Clipped"/>
+                <feFlood flood-color="rgba(0,0,0,0.1)" result="color1Flood"/>
+                <feComposite operator="in" in2="noise1Clipped" in="color1Flood" result="color1"/>
+                <feMerge>
+                  <feMergeNode in="effect1_foregroundBlur"/>
+                  <feMergeNode in="color1"/>
+                </feMerge>
+              </filter>
+              <radialGradient id="s3_grad" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(248.897 221.073) rotate(85) scale(85.3245)">
+                <stop stop-color="#FFBF00"/>
+                <stop offset="1" stop-color="#58DC00" stop-opacity="0"/>
+              </radialGradient>
+            </defs>
+          </svg>
+        </div>
+
+        <!-- Galaxy layers (bg → far → mid → near) -->
+        <img class="gal-layer" id="gal-bg"   src="/gal3.jpg"  alt="" />
+        <img class="gal-layer" id="gal-far"  src="/Far.png"   alt="" />
+        <img class="gal-layer" id="gal-mid"  src="/Mid.png"   alt="" />
+        <img class="gal-layer" id="gal-near" src="/Near.png"  alt="" />
+
+        <!-- Text on top -->
+        <p class="stage-3-text">That's <span id="day-count">1</span> day with DBS</p>
+      </div>
+
+    </section>
+    <!-- Section 4 — perspective card fly-through -->
+    <section class="section-4">
+      <!-- 3D card layer (cards injected by JS) -->
+      <div class="s4-3d-layer" id="s4-3d-layer"></div>
+
+      <!-- Fixed center text -->
+      <div class="s4-header">
+        <p class="s4-count">127 times</p>
+        <p class="s4-subtitle">Your peers stopped what they were doing to say thank you</p>
+      </div>
+
+      <!-- Galaxy color-dodge overlay — only visible during text in/out (hidden while cards fly) -->
+      <img class="s4-overlay" id="s4-overlay" src="/gal4.jpg" alt="" />
+    </section>
+
+    <!-- Section 6: Medal -->
+    <section class="section-6">
+      <!-- Plain 2D wrapper — fading THIS keeps the inner 3D intact (no flatten) -->
+      <div class="medal-fade" id="medal-fade">
+      <div class="medal-scene" id="medal-scene">
+        <div class="medal-launch" id="medal-launch">
+          <div class="medal-coin" id="medal-coin">
+
+            <!-- Front face -->
+            <div class="medal-face coin-front">
+              <img src="/medal.svg" alt="Service Recognition Medal" class="medal-img" />
+              <div class="medal-shimmer" id="medal-shimmer"></div>
+            </div>
+
+            <!-- Back face -->
+            <div class="medal-face coin-back">
+              <img src="/back.png" alt="" class="medal-img" />
+              <div class="medal-back-text">
+                <div class="medal-back-label">Awarded to</div>
+                <div class="medal-back-name">Timothy Tan</div>
+                <div class="medal-back-desc">for completing</div>
+                <div class="medal-back-years">5 years</div>
+                <div class="medal-back-org">at DBS</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+      </div>
+
+      <!-- Text below medal -->
+      <div class="medal-text" id="medal-text">
+        <img class="medal-text-overlay" src="/gal4.jpg" alt="" />
+        <p class="medal-title">Congratulations for Long Service Award</p>
+        <p class="medal-subtitle">for the early calls, the late emails, and the small wins we truly appreciate.<br>Thank you Tim!</p>
+      </div>
+    </section>
+
+    <!-- Section 7: Write a letter -->
+    <section class="section-7">
+      <div class="s7-inner">
+        <p class="s7-title">Write a letter to your future self!</p>
+        <p class="s7-subtitle">Write a letter to the version of you who'll be celebrating 10 years with DBS. We will keep it safe, they'll read it.</p>
+      </div>
+    </section>
+
+    <div class="tail-spacer"></div>
+  </div>
+</div>
+
+<!-- ── CDN dependencies ──────────────────────────────────────────────────── -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lenis@1.1.20/dist/lenis.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/split-type@0.3.4/umd/index.min.js"></script>
+
+<script>
+// ─────────────────────────────────────────────────────────────────────────────
+// LIFERAY CONFIG
+// If Liferay wraps its content in a custom scroll container instead of letting
+// the body scroll, set this to the CSS selector of that container.
+// Example: '#wrapper', '.portlet-content', '[data-scroll-container]'
+// Leave as null to use the default window scroll.
+// ─────────────────────────────────────────────────────────────────────────────
+const LIFERAY_SCROLLER = null;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Utilities
+// ─────────────────────────────────────────────────────────────────────────────
+
+function debounce(func, delay) {
+  let timerId;
+  return (...args) => {
+    clearTimeout(timerId);
+    timerId = setTimeout(() => func.apply(this, args), delay);
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TextSplitter
+// ─────────────────────────────────────────────────────────────────────────────
+class TextSplitter {
+  constructor(textElement, options = {}) {
+    if (!textElement || !(textElement instanceof HTMLElement))
+      throw new Error('Invalid text element provided.');
+    const { resizeCallback, splitTypeTypes } = options;
+    this.textElement = textElement;
+    this.onResize    = typeof resizeCallback === 'function' ? resizeCallback : null;
+    const splitOptions = splitTypeTypes ? { types: splitTypeTypes } : {};
+    this.splitText   = new SplitType(this.textElement, splitOptions);
+    if (this.onResize) this.initResizeObserver();
+    this.previousContainerWidth = null;
+  }
+  initResizeObserver() {
+    this.previousContainerWidth = null;
+    new ResizeObserver(debounce((e) => this.handleResize(e), 100))
+      .observe(this.textElement);
+  }
+  handleResize(entries) {
+    const [{ contentRect }] = entries;
+    const width = Math.floor(contentRect.width);
+    if (this.previousContainerWidth && this.previousContainerWidth !== width) {
+      this.splitText.split();
+      if (this.onResize) this.onResize();
+    }
+    this.previousContainerWidth = width;
+  }
+  getChars() { return this.splitText.chars; }
+}
+
+function splitRoots(roots) {
+  const chars = [];
+  roots.forEach(el => {
+    const s = new TextSplitter(el, { splitTypeTypes: 'words, chars' });
+    const c = s.getChars();
+    if (c) chars.push(...c);
+  });
+  return chars;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Smooth scroll
+// ─────────────────────────────────────────────────────────────────────────────
+function initSmoothScrolling() {
+  const cfg = { lerp: 0.2 };
+  if (LIFERAY_SCROLLER) {
+    const el = document.querySelector(LIFERAY_SCROLLER);
+    if (el) cfg.wrapper = el;
+  }
+  const lenis = new Lenis(cfg);
+  lenis.on('scroll', ScrollTrigger.update);
+  gsap.ticker.add((t) => lenis.raf(t * 1000));
+  gsap.ticker.lagSmoothing(0);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Main scroll experience — ONE pin on .intro-stage, ONE unified timeline
+//
+// Timeline units (1 unit ≈ 100 vh of scroll at scrub:1):
+//   0.0 – 1.0   S1 chars blur out
+//   0.5 – 1.5   S2 chars blur in
+//   3.8 – 4.8   S2 chars blur out
+//   4.3 – 5.3   S3 text chars blur in
+//   4.5 – 5.5   Glare PNG + Spark SVG scale 0→1, fade in
+//
+//  Total: ~5.5 units → end: '+=600%'
+// ─────────────────────────────────────────────────────────────────────────────
+function initScrollExperience() {
+  const stage = document.querySelector('.intro-stage');
+  if (!stage) return;
+
+  // DOM refs
+  const s12Overlay = document.getElementById('s12-overlay');
+  const glarePng   = document.getElementById('glare-png');
+  const sparkSvg = document.getElementById('spark-svg');
+  const stage3Txt = stage.querySelector('.stage-3-text');
+  const dayCount  = document.getElementById('day-count');
+  const galBg     = document.getElementById('gal-bg');
+  const galFar    = document.getElementById('gal-far');
+  const galMid    = document.getElementById('gal-mid');
+  const galNear   = document.getElementById('gal-near');
+
+  // Min size the star images shrink to: the larger viewport dimension so the
+  // square image always covers the screen fully with no black bars
+  const minSize = Math.max(stage.offsetWidth, window.innerHeight);
+
+  // Split text into chars
+  const chars1 = splitRoots(Array.from(stage.querySelectorAll('.stage-out p')));
+  const chars2 = splitRoots(Array.from(stage.querySelectorAll('.stage-in .blur-text-line')));
+
+  // ── Initial states ──────────────────────────────────────────────────────
+  gsap.set(chars1, { filter: 'blur(0px) brightness(100%)', willChange: 'filter' });
+  gsap.set(chars2, { filter: 'blur(10px) brightness(0%)',  willChange: 'filter' });
+  gsap.set(stage3Txt, { filter: 'blur(10px) brightness(0%)', opacity: 1, willChange: 'filter' });
+
+  // Center glare + spark via GSAP (never use CSS translate on GSAP-animated elements)
+  gsap.set(glarePng, { xPercent: -50, yPercent: -50, scale: 0, opacity: 0 });
+  gsap.set(sparkSvg, { xPercent: -50, yPercent: -50, scale: 0, opacity: 0 });
+
+  // Galaxy layer initial states
+  gsap.set(galBg,   { xPercent: -50, yPercent: -50, width: 4096, height: 4096, opacity: 0 });
+  gsap.set(galFar,  { xPercent: -50, yPercent: -50, width: 4096, height: 4096, opacity: 0 });
+  gsap.set(galMid,  { xPercent: -50, yPercent: -50, width: 4096, height: 4096, opacity: 0 });
+  gsap.set(galNear, { xPercent: -50, yPercent: -50, width: 4096, height: 4096, opacity: 0 });
+
+  // ── Single unified timeline ──────────────────────────────────────────────
+  const scrollerEl = LIFERAY_SCROLLER ? document.querySelector(LIFERAY_SCROLLER) : undefined;
+  const stCfg = {
+    trigger: stage, start: 'top top',
+    end: '+=1250%', pin: true, pinSpacing: true, scrub: 1,
+  };
+  if (scrollerEl) stCfg.scroller = scrollerEl;
+
+  const tl = gsap.timeline({ scrollTrigger: stCfg });
+
+  // Stage 1 → 2
+  if (chars1.length)
+    tl.to(chars1, { filter: 'blur(10px) brightness(0%)', stagger: 0.04, duration: 1, ease: 'none' }, 0.0);
+  if (chars2.length)
+    tl.to(chars2, { filter: 'blur(0px) brightness(100%)', stagger: 0.04, duration: 1, ease: 'none' }, 0.5);
+
+  // Stage 2 holds, then blurs out
+  if (chars2.length)
+    tl.to(chars2, { filter: 'blur(10px) brightness(0%)', stagger: 0.04, duration: 1, ease: 'none' }, 3.8);
+
+  // ── Stage 3 ─────────────────────────────────────────────────────────────
+
+  // Fade out the S1/S2 overlay so it doesn't sit over S3
+  tl.to(s12Overlay, { opacity: 0, duration: 0.4, ease: 'none' }, 4.1);
+
+  // Stage 3 text blurs in as whole element (avoids SplitType conflict with live counter)
+  tl.to(stage3Txt, { filter: 'blur(0px) brightness(100%)', duration: 1, ease: 'none' }, 4.3);
+
+  // Glare PNG rises in (scale + opacity)
+  tl.to(glarePng, { scale: 1, opacity: 0.2, ease: 'power2.out', duration: 1 }, 4.5);
+
+  // Spark SVG rises in alongside
+  tl.to(sparkSvg, { scale: 1, opacity: 1, ease: 'power2.out', duration: 1 }, 4.5);
+
+  // ── Stage 3 continued: hold on "That's 1 day", then shrink/galaxy ────────
+  // 1 unit hold (5.3→6.5) so users can read "That's 1 day with DBS" at rest
+
+  // Glare + spark shrink to 120px min, ending at 10.5 (same as galaxy layers)
+  // Glare: 766px → 120px = scale 0.157   Spark: 375px → 120px = scale 0.32
+  tl.to(glarePng, { scale: 120 / 766, ease: 'none', duration: 4.0 }, 6.5);
+  tl.to(sparkSvg, { scale: 120 / 375, ease: 'none', duration: 4.0 }, 6.5);
+
+  // Counter ticks 1 → 1825 (fully scrub-driven — goes backwards on scroll-up)
+  const counter = { val: 1 };
+  tl.to(counter, {
+    val: 1825,
+    duration: 4.0,
+    ease: 'none',
+    onUpdate() {
+      const n = Math.round(counter.val);
+      dayCount.textContent = n.toLocaleString();
+    }
+  }, 6.5);
+
+  // bg galaxy fades in + shrinks (slowest layer — duration 3.5, ends at 10.5)
+  tl.to(galBg, { opacity: 0.6, width: minSize, height: minSize, ease: 'none', duration: 3.5 }, 7.0);
+
+  // Star layers fade in
+  tl.to(galFar,  { opacity: 1, ease: 'none', duration: 0.5 }, 7.2);
+  tl.to(galMid,  { opacity: 1, ease: 'none', duration: 0.5 }, 7.4);
+  tl.to(galNear, { opacity: 1, ease: 'none', duration: 0.5 }, 7.6);
+
+  // ── Star flicker — recursive random brightness per layer ─────────────────
+  // Uses filter:brightness() only — no conflict with scroll timeline
+  // (which only animates opacity/width/height on these elements)
+  const rnd = gsap.utils.random;
+  function flicker(el, minB, maxB, minDur, maxDur) {
+    gsap.to(el, {
+      filter: `brightness(${rnd(minB, maxB)})`,
+      duration: rnd(minDur, maxDur),
+      ease: 'sine.inOut',
+      onComplete: () => flicker(el, minB, maxB, minDur, maxDur)
+    });
+  }
+
+  // Staggered start delays so layers don't sync up on load
+  gsap.delayedCall(rnd(0, 0.5), () => flicker(galFar,  0.88, 1.12, 0.6, 1.4));
+  gsap.delayedCall(rnd(0, 0.5), () => flicker(galMid,  0.85, 1.15, 0.4, 1.0));
+  gsap.delayedCall(rnd(0, 0.5), () => flicker(galNear, 0.82, 1.18, 0.2, 0.7));
+
+  // ── Mouse parallax for galaxy layers ────────────────────────────────────
+  // gsap.quickTo gives butter-smooth lag — x/y are separate from the scroll
+  // timeline which only touches width/height/opacity, so no conflicts.
+  const qx = (el, str) => gsap.quickTo(el, 'x', { duration: str, ease: 'power2.out' });
+  const qy = (el, str) => gsap.quickTo(el, 'y', { duration: str, ease: 'power2.out' });
+
+  const pFarX  = qx(galFar,  0.8);  const pFarY  = qy(galFar,  0.8);
+  const pMidX  = qx(galMid,  0.6);  const pMidY  = qy(galMid,  0.6);
+  const pNearX = qx(galNear, 0.4);  const pNearY = qy(galNear, 0.4);
+
+  window.addEventListener('mousemove', (e) => {
+    // Normalise cursor offset from screen centre: -1 → +1
+    const dx = (e.clientX - window.innerWidth  / 2) / (window.innerWidth  / 2);
+    const dy = (e.clientY - window.innerHeight / 2) / (window.innerHeight / 2);
+
+    pFarX (dx * 12);  pFarY (dy * 12);
+    pMidX (dx * 24);  pMidY (dy * 24);
+    pNearX(dx * 40);  pNearY(dy * 40);
+  });
+
+  // Star layers shrink at different rates toward minSize — all end at 10.5
+  // Far: slowest (3.3)   Mid: medium (3.1)   Near: fastest (2.9)
+  tl.to(galFar,  { width: minSize, height: minSize, ease: 'none', duration: 3.3 }, 7.2);
+  tl.to(galMid,  { width: minSize, height: minSize, ease: 'none', duration: 3.1 }, 7.4);
+  tl.to(galNear, { width: minSize, height: minSize, ease: 'none', duration: 2.9 }, 7.6);
+
+  // ── Dead scroll hold — users experience the full galaxy (10.5 → 11.0) ───
+  tl.to({}, { duration: 0.5 }, 10.5);
+
+  // ── Fade galaxy + glare + spark + S3 text out (11.0 → 12.0) ─────────────
+  tl.to([galBg, galFar, galMid, galNear], { opacity: 0, ease: 'none', duration: 1 }, 11.0);
+  tl.to([glarePng, sparkSvg],             { opacity: 0, ease: 'none', duration: 1 }, 11.0);
+  tl.to(stage3Txt,                        { opacity: 0, filter: 'blur(8px)', ease: 'none', duration: 0.8 }, 11.0);
+
+  // ── Hold on black, then pin releases (12.0 → 12.5) ──────────────────────
+  tl.to({}, { duration: 0.5 }, 12.0);
+
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Section 4 — "127 times" + peer boxes
+//
+// Timeline units:
+//   0.0 – 1.0   count + subtitle blur in
+//   0.8 – 2.8   9 boxes stagger in
+//   2.8 – 4.0   dead hold
+// ─────────────────────────────────────────────────────────────────────────────
+function initSection4() {
+  const s4    = document.querySelector('.section-4');
+  const layer = document.getElementById('s4-3d-layer');
+  if (!s4 || !layer) return;
+
+  const scrollerEl = LIFERAY_SCROLLER ? document.querySelector(LIFERAY_SCROLLER) : undefined;
+  const rnd = gsap.utils.random;
+
+  // ── 15 dummy testimonial cards ───────────────────────────────────────────
+  const messages = [
+    ["I'm really glad to have your support over the past 2 years. Thank you for always checking in and offering a listening ear.", "~ Rae Lee"],
+    ["Thank you for being such an awesome team mate and partner. You always find the best creative references in just minutes.", "~ Chris Hemsworth"],
+    ["Your explorative, creative, and humorous spirit are much appreciated! Thanks for helping out at the 11th hour.", "~ Timothy Tan"],
+    ["Thank you for the trust. I feel very honoured whenever you reach out to consult. Your curiosity is inspiring.", "~ L.M Gupta"],
+    ["Appreciate the trust with your questions — glad I could help out! Always a pleasure working alongside you.", "~"],
+    ["A huge thank you for your outstanding support on the project! I'm so inspired by your growth mindset.", "~ Sarah Chen"],
+    ["It has been such a joy working with you. Your passion and thoughtfulness never go unnoticed.", "~ David Kim"],
+    ["Working with you has been one of the highlights of this year. Your dedication makes every collab effortless.", "~"],
+    ["You bring such genuine energy and care to everything you do. Thank you for lifting everyone around you.", "~ Priya N"],
+    ["Thanks for always holding space for conversations and enabling those random food trips! You're the best.", "~ Marcus Lee"],
+    ["Your honest, constructive critique of my designs makes me want to be better at my craft every day.", "~ Aisha R"],
+    ["The way you show up with a positive attitude is contagious. Grateful to have you on the team.", "~ Tom Wright"],
+    ["Thank you for the invaluable candid conversations and trust you've extended over the years.", "~ Nina P"],
+    ["Looking at the beautiful prototype you designed makes me want to push my own work further. Inspiring!", "~ Kevin O"],
+    ["You made a significant impact on the project and I truly hope we get to work together again soon.", "~ Jess M"],
+  ];
+
+  // Assign cards to randomly-sized waves (1–4 cards each), max 4 per wave
+  const waves = [];
+  let idx = 0;
+  while (idx < messages.length) {
+    const size = Math.min(messages.length - idx, Math.round(rnd(1, 4)));
+    waves.push(Array.from({ length: size }, () => idx++));
+  }
+
+  // ── Build card DOM (styled from the Figma testimonial design) ─────────────
+  const cards = messages.map(([msg, author]) => {
+    const name = author.replace(/^~\s*/, '').trim() || 'Anonymous';
+    const el = document.createElement('div');
+    el.className = 's4-card';
+    el.innerHTML =
+      `<div class="s4-card-shine"></div>` +
+      `<div class="s4-card-header">` +
+        `<img class="s4-card-avatar" src="/card-avatar.png" alt="" />` +
+        `<span class="s4-card-author">${name}</span>` +
+      `</div>` +
+      `<p class="s4-card-message">“${msg}”</p>` +
+      `<img class="s4-card-stamp" src="/card-stamp.png" alt="" />` +
+      `<div class="s4-card-veil"></div>`;
+    layer.appendChild(el);
+    return {
+      el,
+      veil: el.querySelector('.s4-card-veil'),
+      shine: el.querySelector('.s4-card-shine'),
+      x: 0, y: 0, rot: 0,
+    };
+  });
+
+  // ── Collision-free placement WITHIN each wave (cross-wave overlap is fine) ──
+  const MIN_DX = 370, MIN_DY = 240;     // min center spacing (card ≈ 340×200)
+  waves.forEach(wave => {
+    const placed = [];
+    wave.forEach(ci => {
+      let x, y, ok = false;
+      for (let tries = 0; tries < 60 && !ok; tries++) {
+        x = rnd(-650, 650);
+        y = rnd(-340, 340);
+        if (Math.abs(x) < 240) x += (x < 0 ? -240 : 240); // keep clear of center text
+        ok = placed.every(p => Math.abs(p.x - x) > MIN_DX || Math.abs(p.y - y) > MIN_DY);
+      }
+      placed.push({ x, y });
+      cards[ci].x = x;
+      cards[ci].y = y;
+      cards[ci].rot = rnd(-14, 14);
+    });
+  });
+
+  // Depth keyframes
+  const Z_START = -2200;   // deep parked origin (invisible)
+  const Z_FADE  = -1400;   // fade-in completes here (reaches the faint floor)
+  const Z_PAST  = 700;     // exit, past the camera
+
+  // Initial state: parked deep — opaque card fully veiled (pitch black)
+  cards.forEach(c => {
+    gsap.set(c.el, { x: c.x, y: c.y, z: Z_START, rotation: c.rot, opacity: 1 });
+    c.veil.style.opacity = 1;
+  });
+
+  const { mapRange, clamp } = gsap.utils;
+
+  // Black veil opacity by depth: pitch black far → gray near (gradual emerge)
+  function veilOpacity(z) {
+    if (z <= Z_START) return 1;                                  // parked: full black
+    if (z <= Z_FADE)  return mapRange(Z_START, Z_FADE, 1, 0.7, z); // gradual emerge from black
+    if (z <= 0)       return mapRange(Z_FADE, 0, 0.7, 0, z);       // brighten to full gray
+    return 0;                                                     // stays gray through exit
+  }
+  // Card stays fully opaque on approach (clean occlusion); only fades as it passes
+  function cardOpacity(z) {
+    return z <= 0 ? 1 : clamp(0, 1, mapRange(0, Z_PAST, 1, 0, z));
+  }
+
+  // ── Pinned scrub timeline ────────────────────────────────────────────────
+  // Continuous dolly: each wave's cards travel depth→past; STEP small enough
+  // that ~3 waves are in flight at once. Opacity is recomputed from live Z.
+  const STEP = 0.7;                  // smaller gap => more waves visible at once
+  const JOURNEY = 2.8;               // units for a card to go deep-origin → past
+  // lastEnd + re-show(0.4) + blur-out(1.0) + hold(0.5)
+  const total = 1 + (waves.length - 1) * STEP + JOURNEY + 1.9;
+  const stCfg = {
+    trigger: s4, start: 'top top',
+    end: '+=' + Math.round(total * 100) + '%',
+    pin: true, pinSpacing: true, scrub: 1,
+    onUpdate() {
+      // Drive each card's depth-darkness (veil), exit fade, and rainbow sweep from Z
+      cards.forEach(c => {
+        const z = Number(gsap.getProperty(c.el, 'z'));
+        c.veil.style.opacity = veilOpacity(z);
+        c.el.style.opacity   = cardOpacity(z);
+        // Faint white shimmer sweeps along the border as the card travels
+        const shine = clamp(-40, 140, mapRange(-1600, 100, 140, -40, z));
+        c.shine.style.setProperty('--shine', shine + '%');
+      });
+    },
+  };
+  if (scrollerEl) stCfg.scroller = scrollerEl;
+
+  const tl = gsap.timeline({ scrollTrigger: stCfg });
+
+  // ── Title + subtitle blur-in (like Sections 1 & 2) ────────────────────────
+  const titleChars    = splitRoots([s4.querySelector('.s4-count')]);
+  const subtitleChars = splitRoots([s4.querySelector('.s4-subtitle')]);
+  gsap.set(titleChars,    { filter: 'blur(10px) brightness(0%)', willChange: 'filter' });
+  gsap.set(subtitleChars, { filter: 'blur(10px) brightness(0%)', willChange: 'filter' });
+  tl.to(titleChars,    { filter: 'blur(0px) brightness(100%)', stagger: 0.04, duration: 1, ease: 'none' }, 0.0);
+  tl.to(subtitleChars, { filter: 'blur(0px) brightness(100%)', stagger: 0.02, duration: 1, ease: 'none' }, 0.3);
+
+  // ── Card dolly — each wave staggered, cards travel deep-origin → past ─────
+  waves.forEach((wave, w) => {
+    const start = 1 + w * STEP;
+    const waveCards = wave.map(ci => cards[ci].el);
+    tl.to(waveCards, { z: Z_PAST, ease: 'none', duration: JOURNEY }, start);
+  });
+
+  // ── Galaxy color-dodge overlay: visible for text in/out, hidden while cards fly ──
+  const overlay = document.getElementById('s4-overlay');
+  gsap.set(overlay, { opacity: 0 });
+  tl.to(overlay, { opacity: 1, ease: 'none', duration: 0.5 }, 0.0);   // appear with text-in
+  tl.to(overlay, { opacity: 0, ease: 'none', duration: 0.4 }, 1.0);   // hide as first cards emerge
+
+  // ── After all cards have left frame: re-show galaxy, then blur the text out ──
+  const lastEnd = 1 + (waves.length - 1) * STEP + JOURNEY;   // last card fully gone
+  tl.to(overlay, { opacity: 1, ease: 'none', duration: 0.4 }, lastEnd);
+  tl.to(titleChars,    { filter: 'blur(10px) brightness(0%)', stagger: 0.03, duration: 1, ease: 'none' }, lastEnd + 0.4);
+  tl.to(subtitleChars, { filter: 'blur(10px) brightness(0%)', stagger: 0.02, duration: 1, ease: 'none' }, lastEnd + 0.6);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// buildCoinEdges — stacks SVG copies along Z to fake medal thickness
+// edgeCount: number of layers   step: px gap between each layer
+// ─────────────────────────────────────────────────────────────────────────────
+function buildCoinEdges(coinSelector, edgeCount = 34, step = 1.2) {
+  const coinEl = document.querySelector(coinSelector);
+  if (!coinEl) return;
+
+  // Remove any old edges
+  coinEl.querySelectorAll('.coin-edge').forEach(e => e.remove());
+
+  for (let i = 0; i < edgeCount; i++) {
+    const edge = document.createElement('div');
+    edge.classList.add('coin-edge');
+
+    const img = document.createElement('img');
+    img.src = '/medal-edge.svg';   // solid, textless clover — safe to show from both sides
+    img.alt = '';
+    edge.appendChild(img);
+
+    const offset = (i - edgeCount / 2) * step;
+    edge.style.transform = `translateZ(${offset}px)`;
+    coinEl.appendChild(edge);
+  }
+
+  // Push front + back faces outside the edge stack
+  const maxOffset = (edgeCount / 2) * step;
+  const front = coinEl.querySelector('.coin-front');
+  const back  = coinEl.querySelector('.coin-back');
+  if (front) front.style.transform = `rotateY(0deg) translateZ(${maxOffset}px)`;
+  if (back)  back.style.transform  = `rotateY(180deg) translateZ(${maxOffset}px)`;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Section 6 — Medal + text
+// ─────────────────────────────────────────────────────────────────────────────
+function initSection6() {
+  const s6          = document.querySelector('.section-6');
+  const medalScene  = document.getElementById('medal-scene');
+  const medalLaunch = document.getElementById('medal-launch');
+  const medalCoin   = document.getElementById('medal-coin');
+  const shimmerEl   = document.getElementById('medal-shimmer');
+  const medalText   = document.getElementById('medal-text');
+  const titleEl     = medalText.querySelector('.medal-title');
+  const subtitleEl  = medalText.querySelector('.medal-subtitle');
+  const frontFace   = medalCoin.querySelector('.coin-front');
+  const backFace    = medalCoin.querySelector('.coin-back');
+  if (!s6 || !medalScene) return;
+
+  // Face visibility is handled purely by CSS backface-visibility — when the
+  // coin flips, away-facing layers (front + edges) auto-hide, so only the
+  // correctly-oriented back face shows. No JS opacity juggling needed.
+
+  const scrollerEl = LIFERAY_SCROLLER ? document.querySelector(LIFERAY_SCROLLER) : undefined;
+
+  // ── Build 3D coin edges — all visible, scaled uniformly with the medal ───
+  buildCoinEdges('#medal-coin', 34, 1.2);
+
+  // ── Split text into chars for blur-in ───────────────────────────────────
+  const titleChars    = splitRoots([titleEl]);
+  const subtitleChars = splitRoots([subtitleEl]);
+
+  // ── Initial states ───────────────────────────────────────────────────────
+  // Uniform 3D scale — scaleZ included so depth shrinks WITH size (GSAP's
+  // `scale` only sets X/Y; Z must be set explicitly or the edge stack stays
+  // full-depth at tiny sizes, creating a thin tall tower)
+  gsap.set(medalLaunch, { scale: 0.02, scaleZ: 0.02, rotateY: 0 });
+  gsap.set(titleChars,    { filter: 'blur(10px) brightness(0%)', willChange: 'filter' });
+  gsap.set(subtitleChars, { filter: 'blur(10px) brightness(0%)', willChange: 'filter' });
+
+  // ── Pinned scrub timeline ────────────────────────────────────────────────
+  const stCfg = {
+    trigger: s6, start: 'top top',
+    end: '+=600%', pin: true, pinSpacing: true, scrub: 1,
+  };
+  if (scrollerEl) stCfg.scroller = scrollerEl;
+
+  const tl = gsap.timeline({ scrollTrigger: stCfg });
+
+  // Grow — scaleZ animates with scale so depth stays proportional
+  tl.to(medalLaunch, { scale: 1, scaleZ: 1, ease: 'power2.out', duration: 2 }, 0.0);
+
+  // Rotation phase 1 — FAST spin while small (0 → ~100px). 3 quick spins
+  // crammed into the first 0.35 units mask the layer-separation while tiny.
+  tl.to(medalLaunch, { rotateY: 1080, ease: 'power1.out', duration: 0.35 }, 0.0);
+
+  // Rotation phase 2 — SLOW single spin as it settles; lands on front face (1440 = 4×360)
+  tl.to(medalLaunch, { rotateY: 1440, ease: 'power1.out', duration: 1.65 }, 0.35);
+
+  // Title blurs in
+  tl.to(titleChars,    { filter: 'blur(0px) brightness(100%)', stagger: 0.03, duration: 1, ease: 'none' }, 1.5);
+
+  // Subtext blurs in
+  tl.to(subtitleChars, { filter: 'blur(0px) brightness(100%)', stagger: 0.015, duration: 1, ease: 'none' }, 2.0);
+
+  // Dead hold — users experience the full message
+  tl.to({}, { duration: 1.5 }, 3.0);
+
+  // ── Exit (4.5 → 5.5) ──────────────────────────────────────────────────────
+  // Text blurs out; in parallel the medal spins while fading away.
+  tl.to(titleChars,    { filter: 'blur(10px) brightness(0%)', stagger: 0.03, duration: 1, ease: 'none' }, 4.5);
+  tl.to(subtitleChars, { filter: 'blur(10px) brightness(0%)', stagger: 0.02, duration: 1, ease: 'none' }, 4.6);
+  // Fade the 2D wrapper (keeps the inner 3D intact — no flatten)
+  tl.to('#medal-fade', { opacity: 0, ease: 'power2.in', duration: 1 }, 4.5);
+  // Full spin while fading — thickness/offset stays visible the whole time now
+  tl.to(medalLaunch,   { rotateY: 1800, ease: 'none', duration: 1 }, 4.5);
+  tl.to({}, { duration: 0.5 }, 5.5);   // hold on black before pin releases
+
+  // ── Launch animation — commented out, preserved for future use ───────────
+  // ScrollTrigger.create({ trigger: s6, start: 'top 80%', onEnter() {
+  //   medalLaunch.classList.add('launch-active'); } });
+
+  // ── Click to flip ────────────────────────────────────────────────────────
+  medalScene.addEventListener('click', () => {
+    medalCoin.classList.toggle('is-flipped');
+  });
+
+  // ── Mouse tilt + shimmer (only active once medal reaches full size) ──────
+  const MAX_TILT = 25;
+
+  medalScene.addEventListener('mousemove', (e) => {
+    // Only activate tilt after medal has grown to near full size
+    if (Number(gsap.getProperty(medalLaunch, 'scaleX')) < 0.9) return;
+
+    const rect = medalScene.getBoundingClientRect();
+    const cx = rect.left + rect.width  / 2;
+    const cy = rect.top  + rect.height / 2;
+    const dx = (e.clientX - cx) / (rect.width  / 2);
+    const dy = (e.clientY - cy) / (rect.height / 2);
+
+    const rx = -Math.max(-1, Math.min(1, dy)) * MAX_TILT;
+    const ry =  Math.max(-1, Math.min(1, dx)) * MAX_TILT;
+    medalScene.style.transform = `rotateX(${rx}deg) rotateY(${ry}deg)`;
+
+    const sx = ((e.clientX - rect.left) / rect.width)  * 100;
+    const sy = ((e.clientY - rect.top)  / rect.height) * 100;
+    shimmerEl.style.setProperty('--sx', `${sx}%`);
+    shimmerEl.style.setProperty('--sy', `${sy}%`);
+    shimmerEl.style.opacity = '1';
+  });
+
+  medalScene.addEventListener('mouseleave', () => {
+    medalScene.style.transform = 'rotateX(0deg) rotateY(0deg)';
+    shimmerEl.style.opacity = '0';
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Section 7 — Write a letter to your future self
+// Timeline: 0→1 blur in, 1→2.5 hold. Pin +=250%
+// ─────────────────────────────────────────────────────────────────────────────
+function initSection7() {
+  const s7 = document.querySelector('.section-7');
+  if (!s7) return;
+
+  const titleChars    = splitRoots([s7.querySelector('.s7-title')]);
+  const subtitleChars = splitRoots([s7.querySelector('.s7-subtitle')]);
+  gsap.set(titleChars,    { filter: 'blur(10px) brightness(0%)', willChange: 'filter' });
+  gsap.set(subtitleChars, { filter: 'blur(10px) brightness(0%)', willChange: 'filter' });
+
+  const scrollerEl = LIFERAY_SCROLLER ? document.querySelector(LIFERAY_SCROLLER) : undefined;
+  const stCfg = {
+    trigger: s7, start: 'top top',
+    end: '+=250%', pin: true, pinSpacing: true, scrub: 1,
+  };
+  if (scrollerEl) stCfg.scroller = scrollerEl;
+
+  const tl = gsap.timeline({ scrollTrigger: stCfg });
+  tl.to(titleChars,    { filter: 'blur(0px) brightness(100%)', stagger: 0.03, duration: 1, ease: 'none' }, 0.0);
+  tl.to(subtitleChars, { filter: 'blur(0px) brightness(100%)', stagger: 0.015, duration: 1, ease: 'none' }, 0.3);
+  tl.to({}, { duration: 1.5 }, 1.0);   // hold
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Font playground — live type controls (dev tool)
+// ─────────────────────────────────────────────────────────────────────────────
+function initFontPanel() {
+  const root = document.documentElement;
+  const body = document.getElementById('fp-body');
+  if (!body) return;
+
+  // Shared font list (any font usable in any role)
+  let FONTS = [
+    { label: 'Bricolage Grotesque', css: "'Bricolage Grotesque', sans-serif" },
+    { label: 'Space Grotesk',       css: "'Space Grotesk', sans-serif" },
+    { label: 'Hanken Grotesk',      css: "'Hanken Grotesk', sans-serif" },
+    { label: 'Inter',               css: "'Inter', sans-serif" },
+    { label: 'Geist',               css: "'Geist', sans-serif" },
+    { label: 'Clash Display',       css: "'Clash Display', sans-serif" },
+    { label: 'General Sans',        css: "'General Sans', sans-serif" },
+    { label: 'Fraunces',            css: "'Fraunces', Georgia, serif" },
+    { label: 'Newsreader',          css: "'Newsreader', Georgia, serif" },
+    { label: 'Instrument Serif',    css: "'Instrument Serif', Georgia, serif" },
+    { label: 'Gambetta',            css: "'Gambetta', Georgia, serif" },
+    { label: 'Times New Roman',     css: "'Times New Roman', Times, serif" },
+  ];
+  const WEIGHTS = ['300', '400', '500', '600', '700', '800'];
+  const STYLES  = ['normal', 'italic'];
+
+  const GROUPS = [
+    { key: 'display', label: 'Display (headings)', vf: '--font-display', vw: '--weight-display', vs: '--style-display',
+      def: { font: "'Times New Roman', Times, serif", weight: '300', style: 'normal' } },
+    { key: 'body', label: 'Body (subtitles)', vf: '--font-body', vw: '--weight-body', vs: '--style-body',
+      def: { font: "'Inter', sans-serif", weight: '300', style: 'normal' } },
+    { key: 'quote', label: 'Card quote', vf: '--font-quote', vw: '--weight-quote', vs: '--style-quote',
+      def: { font: "'Fraunces', Georgia, serif", weight: '300', style: 'italic' } },
+  ];
+
+  const LS_KEY = 'fontPlayground_v2';
+  const saved = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
+
+  const opt = (val, label, sel) =>
+    `<option value="${val.replace(/"/g, '&quot;')}"${val === sel ? ' selected' : ''}>${label || val}</option>`;
+
+  // Build a group's row markup
+  function groupHTML(g) {
+    const cur = saved[g.key] || g.def;
+    const fams = FONTS.map(f => opt(f.css, f.label, cur.font)).join('');
+    const wts  = WEIGHTS.map(w => opt(w, w, cur.weight)).join('');
+    const sts  = STYLES.map(s => opt(s, s, cur.style)).join('');
+    return `<div class="fp-group" data-key="${g.key}">
+      <label>${g.label}</label>
+      <div class="fp-row">
+        <select class="fp-f">${fams}</select>
+        <select class="fp-s">${sts}</select>
+        <select class="fp-w">${wts}</select>
+      </div>
+    </div>`;
+  }
+
+  // Inject groups before the .fp-add block
+  const addBlock = body.querySelector('.fp-add');
+  GROUPS.forEach(g => addBlock.insertAdjacentHTML('beforebegin', groupHTML(g)));
+
+  function apply(g, font, weight, style) {
+    root.style.setProperty(g.vf, font);
+    root.style.setProperty(g.vw, weight);
+    root.style.setProperty(g.vs, style);
+  }
+  function persist() {
+    const data = {};
+    GROUPS.forEach(g => {
+      const el = body.querySelector(`.fp-group[data-key="${g.key}"]`);
+      data[g.key] = {
+        font:   el.querySelector('.fp-f').value,
+        weight: el.querySelector('.fp-w').value,
+        style:  el.querySelector('.fp-s').value,
+      };
+    });
+    localStorage.setItem(LS_KEY, JSON.stringify(data));
+  }
+
+  // Apply saved/default + wire change handlers
+  GROUPS.forEach(g => {
+    const cur = saved[g.key] || g.def;
+    apply(g, cur.font, cur.weight, cur.style);
+    const el = body.querySelector(`.fp-group[data-key="${g.key}"]`);
+    el.querySelectorAll('select').forEach(sel => {
+      sel.addEventListener('change', () => {
+        apply(g, el.querySelector('.fp-f').value, el.querySelector('.fp-w').value, el.querySelector('.fp-s').value);
+        persist();
+      });
+    });
+  });
+
+  // ── Hot-add a Google Font by name ────────────────────────────────────────
+  document.getElementById('fp-add-btn').addEventListener('click', () => {
+    const input = document.getElementById('fp-add-input');
+    const name = input.value.trim();
+    if (!name) return;
+    const fam = name.replace(/\s+/g, '+');
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = `https://fonts.googleapis.com/css2?family=${fam}:ital,wght@0,300..800;1,300..800&display=swap`;
+    link.onerror = () => { link.href = `https://fonts.googleapis.com/css2?family=${fam}&display=swap`; };
+    document.head.appendChild(link);
+
+    const css = `'${name}', sans-serif`;
+    if (!FONTS.some(f => f.label === name)) FONTS.push({ label: name + ' ✦', css });
+    // Append to every family dropdown
+    body.querySelectorAll('.fp-f').forEach(sel => {
+      sel.insertAdjacentHTML('beforeend', opt(css, name + ' ✦', sel.value));
+    });
+    input.value = '';
+  });
+
+  // ── Copy current settings (paste back to bake them in) ───────────────────
+  document.getElementById('fp-copy').addEventListener('click', async () => {
+    const lines = GROUPS.flatMap(g => {
+      const el = body.querySelector(`.fp-group[data-key="${g.key}"]`);
+      return [
+        `${g.vf}: ${el.querySelector('.fp-f').value};`,
+        `${g.vw}: ${el.querySelector('.fp-w').value};`,
+        `${g.vs}: ${el.querySelector('.fp-s').value};`,
+      ];
+    });
+    const text = ':root {\n  ' + lines.join('\n  ') + '\n}';
+    try { await navigator.clipboard.writeText(text); } catch (e) {}
+    const btn = document.getElementById('fp-copy');
+    btn.textContent = 'Copied!'; setTimeout(() => (btn.textContent = 'Copy settings'), 1200);
+  });
+
+  // ── Reset to defaults ────────────────────────────────────────────────────
+  document.getElementById('fp-reset').addEventListener('click', () => {
+    localStorage.removeItem(LS_KEY);
+    GROUPS.forEach(g => {
+      apply(g, g.def.font, g.def.weight, g.def.style);
+      const el = body.querySelector(`.fp-group[data-key="${g.key}"]`);
+      el.querySelector('.fp-f').value = g.def.font;
+      el.querySelector('.fp-w').value = g.def.weight;
+      el.querySelector('.fp-s').value = g.def.style;
+    });
+  });
+
+  // ── Collapse toggle ──────────────────────────────────────────────────────
+  document.getElementById('fp-toggle').addEventListener('click', () => {
+    const panel = document.getElementById('font-panel');
+    panel.classList.toggle('collapsed');
+    document.getElementById('fp-toggle').textContent = panel.classList.contains('collapsed') ? '+' : '–';
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Boot
+// ─────────────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  gsap.registerPlugin(ScrollTrigger);
+  initFontPanel();
+  requestAnimationFrame(() => {
+    initSmoothScrolling();
+    initScrollExperience();
+    initSection4();
+    initSection6();
+    initSection7();
+  });
+});
+</script>
+</body>
+</html>
