@@ -4,9 +4,9 @@ Scroll-driven anniversary narrative experience for DBS Bank. A cinematic sequenc
 
 ## Source file
 
-**`index.html`** — single-file vanilla JS implementation. This is the sole source of truth. All scroll logic, animations, and markup live here. GSAP, Lenis, and SplitType are loaded via CDN.
+**`src/index.html`** — single-file vanilla JS implementation. This is the sole source of truth. All scroll logic, animations, and markup live here. GSAP, Lenis, and SplitType are loaded via CDN.
 
-Assets are served from **`public/`** at root-relative paths (`/glare.png`, `/medal.svg`, etc.).
+Assets are served from **`src/assets/`** at root-relative paths (`/glare.png`, `/medal.svg`, etc.).
 
 ## Documentation
 
@@ -25,7 +25,8 @@ Assets are served from **`public/`** at root-relative paths (`/glare.png`, `/med
 
 ```bash
 pnpm install   # installs vite (dev server only — no runtime deps)
-pnpm dev       # serves at localhost:5173
+pnpm dev       # builds to dist/ (watch mode) + serves at localhost:4173
+pnpm build     # one-off production build to dist/
 ```
 
 ## Critical Rules

@@ -4,10 +4,11 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "concurrently \"vite build --watch\" \"vite preview\"",
     "build": "vite build"
   },
   "devDependencies": {
+    "concurrently": "^10.0.3",
     "vite": "6.3.5"
   }
 }

@@ -6,7 +6,7 @@ A scroll-driven anniversary narrative experience for DBS Bank employees. The exp
 
 ## Source File
 
-**`index.html`** is the single source of truth. It contains all markup, inline CSS, and inline JavaScript in one file. There is no build step for the runtime — GSAP, Lenis, and SplitType are loaded via CDN:
+**`src/index.html`** is the single source of truth. It contains all markup, inline CSS, and inline JavaScript in one file. There is no build step for the runtime — GSAP, Lenis, and SplitType are loaded via CDN:
 
 ```html
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
@@ -15,30 +15,32 @@ A scroll-driven anniversary narrative experience for DBS Bank employees. The exp
 <script src="https://cdn.jsdelivr.net/npm/split-type@0.3.4/umd/index.min.js"></script>
 ```
 
-Vite is used only as a local dev server (to serve `public/` assets at root-relative paths). There is no bundling or transpilation.
+Vite is used as a dev + build tool. `pnpm dev` runs `vite build --watch` (rebuilds `dist/` on every save) alongside `vite preview` (serves `dist/` at `localhost:4173`). There is no JS bundling or transpilation — Vite copies assets and minifies the HTML.
 
 ## File Structure
 
 ```
-index.html          # All markup + CSS + JS — the entire experience
-public/             # Static assets served at root URL by Vite
-  BG_galaxy.png     # Galaxy background layer
-  Far.png           # Galaxy far star layer
-  Mid.png           # Galaxy mid star layer
-  Near.png          # Galaxy near star layer
-  gal3.jpg          # Galaxy texture (S1/S2 overlay)
-  gal4.jpg          # Galaxy texture (medal section)
-  glare.png         # Glare highlight PNG
-  medal.svg         # Medal front face
-  medal-edge.svg    # Medal edge/side face
-  back.png          # Medal back face
-  shimmer.png       # Shimmer mask for cards
-  card-avatar.png   # Peer card avatar placeholder
-  card-stamp.png    # Peer card stamp graphic
-  card-texture.svg  # Peer card holographic texture
-  card-sparks-mask.svg  # Card sparks effect mask
-  1–4.png           # Peer avatar images
-docs/               # Implementation reference documentation
+src/
+  index.html          # All markup + CSS + JS — the entire experience
+  assets/             # Static assets served at root URL by Vite
+    BG_galaxy.png     # Galaxy background layer
+    Far.png           # Galaxy far star layer
+    Mid.png           # Galaxy mid star layer
+    Near.png          # Galaxy near star layer
+    gal3.jpg          # Galaxy texture (S1/S2 overlay)
+    gal4.jpg          # Galaxy texture (medal section)
+    glare.png         # Glare highlight PNG
+    medal.svg         # Medal front face
+    medal-edge.svg    # Medal edge/side face
+    back.png          # Medal back face
+    shimmer.png       # Shimmer mask for cards
+    card-avatar.png   # Peer card avatar placeholder
+    card-stamp.png    # Peer card stamp graphic
+    card-texture.svg  # Peer card holographic texture
+    card-sparks-mask.svg  # Card sparks effect mask
+    1–4.png           # Peer avatar images
+dist/               # Build output (gitignored) — deploy this folder
+documentation/      # Implementation reference documentation
 guidelines/         # Design guidelines
 CLAUDE.md           # Project orchestrator for Claude sessions
 ```

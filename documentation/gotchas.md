@@ -63,6 +63,6 @@ The wrapper elements (`.gal-far-wrap` etc.) use `opacity` for flicker — again 
 
 ---
 
-## 8. Assets must live in `public/` — not the project root
+## 8. Assets must live in `src/assets/` — not anywhere else
 
-`index.html` references all images with root-relative paths (`/glare.png`, `/medal.svg`, etc.). Vite serves `public/` at the root URL. Placing assets anywhere else (project root, `assets/`, etc.) will 404 in the dev server.
+`src/index.html` references all images with root-relative paths (`/glare.png`, `/medal.svg`, etc.). Vite is configured with `root: 'src'` and `publicDir: 'assets'`, so `src/assets/` is served at the root URL. Placing assets anywhere else will 404 in the dev server and be missing from the build.
