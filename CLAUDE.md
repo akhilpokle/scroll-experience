@@ -12,12 +12,14 @@ Assets are served from **`public/`** at root-relative paths (`/glare.png`, `/med
 
 | Doc | What it covers |
 |-----|---------------|
-| [docs/architecture.md](docs/architecture.md) | Project structure, tech stack, section map |
-| [docs/scroll-system.md](docs/scroll-system.md) | Lenis + GSAP wiring, single-pin rule, scrub mechanics, cleanup |
-| [docs/timeline.md](docs/timeline.md) | Full timeline coordinate map for every section, editing rules |
-| [docs/text-animation.md](docs/text-animation.md) | SplitType strategy, blur-filter pattern, counter constraint |
-| [docs/star-field.md](docs/star-field.md) | Canvas camera-zoom model, PRNG, sprite rasterization, perf notes |
-| [docs/gotchas.md](docs/gotchas.md) | All critical "don't break" rules in one place |
+| [documentation/architecture.md](documentation/architecture.md) | Project structure, tech stack, section map |
+| [documentation/scroll-system.md](documentation/scroll-system.md) | Lenis + GSAP wiring, single-pin rule, scrub mechanics, cleanup |
+| [documentation/timeline.md](documentation/timeline.md) | Full timeline coordinate map for every section, editing rules |
+| [documentation/text-animation.md](documentation/text-animation.md) | SplitType strategy, blur-filter pattern, counter constraint |
+| [documentation/star-field.md](documentation/star-field.md) | Canvas camera-zoom model, PRNG, sprite rasterization, perf notes |
+| [documentation/gotchas.md](documentation/gotchas.md) | All critical "don't break" rules in one place |
+
+> `docs/` is reserved for GitHub Pages deployment (serves the live experience). Do not put documentation files there.
 
 ## Development
 

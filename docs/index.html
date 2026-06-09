@@ -112,9 +112,10 @@
       position: absolute;
       left: 50%; top: 50%;
       width: 766px; height: 744px;
-      mix-blend-mode: screen;
+      mix-blend-mode: screen;   /* dark bg blends away; works over black + galaxy */
       pointer-events: none;
       z-index: 1;
+      will-change: transform, opacity;
     }
 
     .spark-svg {
@@ -123,6 +124,7 @@
       width: 375px; height: 377px;
       pointer-events: none;
       z-index: 2;
+      will-change: transform, opacity;
     }
 
     .spark-svg svg {
@@ -141,27 +143,28 @@
       white-space: nowrap;
     }
 
-    /* Galaxy layers */
+    /* Galaxy layers — sized + scaled via GSAP; transform-animated (GPU) */
     .gal-layer {
       position: absolute;
       left: 50%; top: 50%;
-      pointer-events: none;
-    }
-
-    #gal-bg {
-      object-fit: cover;
-      z-index: 4;
-    }
-
-    #gal-far, #gal-mid, #gal-near {
-      width: 4096px; height: 4096px;
       object-fit: cover;
       object-position: center;
+      pointer-events: none;
+      will-change: transform;
     }
 
-    #gal-far  { z-index: 5; }
-    #gal-mid  { z-index: 6; }
-    #gal-near { z-index: 7; }
+    #gal-bg { z-index: 4; }
+
+    /* Flicker wrappers — opacity flicker lives here (compositor-cheap) */
+    .gal-flicker {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      will-change: opacity;
+    }
+    #gal-far-wrap  { z-index: 5; }
+    #gal-mid-wrap  { z-index: 6; }
+    #gal-near-wrap { z-index: 7; }
 
     /* Glare + spark sit above galaxy layers */
     .glare-png { z-index: 8; }
@@ -667,7 +670,7 @@
       </div>
 
       <!-- S1/S2 galaxy overlay — multiply blends galaxy texture onto white text -->
-      <img id="s12-overlay" src="./gal4.jpg" alt="" />
+      <img id="s12-overlay" src="/gal4.jpg" alt="" />
 
       <!-- Stage 2: thank-you text -->
       <div class="stage-in">
@@ -680,7 +683,7 @@
       <!-- Stage 3: "That's 1 day with DBS" + spark + glare -->
       <div class="stage-3">
         <!-- Glare PNG — colorful starburst ring, screen blend -->
-        <img class="glare-png" id="glare-png" src="./glare.png" alt="" />
+        <img class="glare-png" id="glare-png" src="/glare.png" alt="" />
 
         <!-- Spark SVG — X shape, inlined so SVG filters render correctly -->
         <div class="spark-svg" id="spark-svg">
@@ -731,10 +734,10 @@
         </div>
 
         <!-- Galaxy layers (bg → far → mid → near) -->
-        <img class="gal-layer" id="gal-bg"   src="./gal3.jpg"  alt="" />
-        <img class="gal-layer" id="gal-far"  src="./Far.png"   alt="" />
-        <img class="gal-layer" id="gal-mid"  src="./Mid.png"   alt="" />
-        <img class="gal-layer" id="gal-near" src="./Near.png"  alt="" />
+        <img class="gal-layer" id="gal-bg"   src="/gal3.jpg"  alt="" />
+        <div class="gal-flicker" id="gal-far-wrap"><img class="gal-layer" id="gal-far"  src="/Far.png"  alt="" /></div>
+        <div class="gal-flicker" id="gal-mid-wrap"><img class="gal-layer" id="gal-mid"  src="/Mid.png"  alt="" /></div>
+        <div class="gal-flicker" id="gal-near-wrap"><img class="gal-layer" id="gal-near" src="/Near.png" alt="" /></div>
 
         <!-- Text on top -->
         <p class="stage-3-text">That's <span id="day-count">1</span> day with DBS</p>
@@ -753,7 +756,7 @@
       </div>
 
       <!-- Galaxy color-dodge overlay — only visible during text in/out (hidden while cards fly) -->
-      <img class="s4-overlay" id="s4-overlay" src="./gal4.jpg" alt="" />
+      <img class="s4-overlay" id="s4-overlay" src="/gal4.jpg" alt="" />
     </section>
 
     <!-- Section 6: Medal -->
@@ -766,13 +769,13 @@
 
             <!-- Front face -->
             <div class="medal-face coin-front">
-              <img src="./medal.svg" alt="Service Recognition Medal" class="medal-img" />
+              <img src="/medal.svg" alt="Service Recognition Medal" class="medal-img" />
               <div class="medal-shimmer" id="medal-shimmer"></div>
             </div>
 
             <!-- Back face -->
             <div class="medal-face coin-back">
-              <img src="./back.png" alt="" class="medal-img" />
+              <img src="/back.png" alt="" class="medal-img" />
               <div class="medal-back-text">
                 <div class="medal-back-label">Awarded to</div>
                 <div class="medal-back-name">Timothy Tan</div>
@@ -789,7 +792,7 @@
 
       <!-- Text below medal -->
       <div class="medal-text" id="medal-text">
-        <img class="medal-text-overlay" src="./gal4.jpg" alt="" />
+        <img class="medal-text-overlay" src="/gal4.jpg" alt="" />
         <p class="medal-title">Congratulations for Long Service Award</p>
         <p class="medal-subtitle">for the early calls, the late emails, and the small wins we truly appreciate.<br>Thank you Tim!</p>
       </div>
@@ -918,10 +921,15 @@ function initScrollExperience() {
   const galFar    = document.getElementById('gal-far');
   const galMid    = document.getElementById('gal-mid');
   const galNear   = document.getElementById('gal-near');
+  const galFarWrap  = document.getElementById('gal-far-wrap');
+  const galMidWrap  = document.getElementById('gal-mid-wrap');
+  const galNearWrap = document.getElementById('gal-near-wrap');
 
-  // Min size the star images shrink to: the larger viewport dimension so the
-  // square image always covers the screen fully with no black bars
+  // Cover size = larger viewport dimension so the square image fully covers the
+  // screen (no blank edges) at scale 1. We animate SCALE (GPU) instead of
+  // width/height (layout+paint), starting zoomed-in and settling to cover.
   const minSize = Math.max(stage.offsetWidth, window.innerHeight);
+  const START_SCALE = 4096 / minSize;   // same zoomed-in start as before
 
   // Split text into chars
   const chars1 = splitRoots(Array.from(stage.querySelectorAll('.stage-out p')));
@@ -936,11 +944,12 @@ function initScrollExperience() {
   gsap.set(glarePng, { xPercent: -50, yPercent: -50, scale: 0, opacity: 0 });
   gsap.set(sparkSvg, { xPercent: -50, yPercent: -50, scale: 0, opacity: 0 });
 
-  // Galaxy layer initial states
-  gsap.set(galBg,   { xPercent: -50, yPercent: -50, width: 4096, height: 4096, opacity: 0 });
-  gsap.set(galFar,  { xPercent: -50, yPercent: -50, width: 4096, height: 4096, opacity: 0 });
-  gsap.set(galMid,  { xPercent: -50, yPercent: -50, width: 4096, height: 4096, opacity: 0 });
-  gsap.set(galNear, { xPercent: -50, yPercent: -50, width: 4096, height: 4096, opacity: 0 });
+  // Galaxy layer initial states — fixed cover-size box, started zoomed via scale
+  const galSet = { xPercent: -50, yPercent: -50, width: minSize, height: minSize, scale: START_SCALE, opacity: 0 };
+  gsap.set(galBg,   galSet);
+  gsap.set(galFar,  galSet);
+  gsap.set(galMid,  galSet);
+  gsap.set(galNear, galSet);
 
   // ── Single unified timeline ──────────────────────────────────────────────
   const scrollerEl = LIFERAY_SCROLLER ? document.querySelector(LIFERAY_SCROLLER) : undefined;
@@ -996,35 +1005,35 @@ function initScrollExperience() {
     }
   }, 6.5);
 
-  // bg galaxy fades in + shrinks (slowest layer — duration 3.5, ends at 10.5)
-  tl.to(galBg, { opacity: 0.6, width: minSize, height: minSize, ease: 'none', duration: 3.5 }, 7.0);
+  // bg galaxy fades in + shrinks to cover (slowest layer — duration 3.5, ends at 10.5)
+  tl.to(galBg, { opacity: 0.6, scale: 1, ease: 'none', duration: 3.5 }, 7.0);
 
   // Star layers fade in
   tl.to(galFar,  { opacity: 1, ease: 'none', duration: 0.5 }, 7.2);
   tl.to(galMid,  { opacity: 1, ease: 'none', duration: 0.5 }, 7.4);
   tl.to(galNear, { opacity: 1, ease: 'none', duration: 0.5 }, 7.6);
 
-  // ── Star flicker — recursive random brightness per layer ─────────────────
-  // Uses filter:brightness() only — no conflict with scroll timeline
-  // (which only animates opacity/width/height on these elements)
+  // ── Star flicker — opacity on the WRAPPER (GPU-composited, no repaint) ────
+  // Wrapper opacity multiplies the img's reveal opacity, so it only shows once
+  // the layer has revealed. Far cheaper than filter:brightness on huge images.
   const rnd = gsap.utils.random;
-  function flicker(el, minB, maxB, minDur, maxDur) {
+  function flicker(el, minO, maxO, minDur, maxDur) {
     gsap.to(el, {
-      filter: `brightness(${rnd(minB, maxB)})`,
+      opacity: rnd(minO, maxO),
       duration: rnd(minDur, maxDur),
       ease: 'sine.inOut',
-      onComplete: () => flicker(el, minB, maxB, minDur, maxDur)
+      onComplete: () => flicker(el, minO, maxO, minDur, maxDur)
     });
   }
 
   // Staggered start delays so layers don't sync up on load
-  gsap.delayedCall(rnd(0, 0.5), () => flicker(galFar,  0.88, 1.12, 0.6, 1.4));
-  gsap.delayedCall(rnd(0, 0.5), () => flicker(galMid,  0.85, 1.15, 0.4, 1.0));
-  gsap.delayedCall(rnd(0, 0.5), () => flicker(galNear, 0.82, 1.18, 0.2, 0.7));
+  gsap.delayedCall(rnd(0, 0.5), () => flicker(galFarWrap,  0.82, 1.0, 0.6, 1.4));
+  gsap.delayedCall(rnd(0, 0.5), () => flicker(galMidWrap,  0.80, 1.0, 0.4, 1.0));
+  gsap.delayedCall(rnd(0, 0.5), () => flicker(galNearWrap, 0.78, 1.0, 0.2, 0.7));
 
   // ── Mouse parallax for galaxy layers ────────────────────────────────────
   // gsap.quickTo gives butter-smooth lag — x/y are separate from the scroll
-  // timeline which only touches width/height/opacity, so no conflicts.
+  // timeline (scale/opacity), all composited into one GPU transform.
   const qx = (el, str) => gsap.quickTo(el, 'x', { duration: str, ease: 'power2.out' });
   const qy = (el, str) => gsap.quickTo(el, 'y', { duration: str, ease: 'power2.out' });
 
@@ -1042,11 +1051,11 @@ function initScrollExperience() {
     pNearX(dx * 40);  pNearY(dy * 40);
   });
 
-  // Star layers shrink at different rates toward minSize — all end at 10.5
+  // Star layers shrink (scale → 1 = cover) at different rates — all end at 10.5
   // Far: slowest (3.3)   Mid: medium (3.1)   Near: fastest (2.9)
-  tl.to(galFar,  { width: minSize, height: minSize, ease: 'none', duration: 3.3 }, 7.2);
-  tl.to(galMid,  { width: minSize, height: minSize, ease: 'none', duration: 3.1 }, 7.4);
-  tl.to(galNear, { width: minSize, height: minSize, ease: 'none', duration: 2.9 }, 7.6);
+  tl.to(galFar,  { scale: 1, ease: 'none', duration: 3.3 }, 7.2);
+  tl.to(galMid,  { scale: 1, ease: 'none', duration: 3.1 }, 7.4);
+  tl.to(galNear, { scale: 1, ease: 'none', duration: 2.9 }, 7.6);
 
   // ── Dead scroll hold — users experience the full galaxy (10.5 → 11.0) ───
   tl.to({}, { duration: 0.5 }, 10.5);
@@ -1112,11 +1121,11 @@ function initSection4() {
     el.innerHTML =
       `<div class="s4-card-shine"></div>` +
       `<div class="s4-card-header">` +
-        `<img class="s4-card-avatar" src="./card-avatar.png" alt="" />` +
+        `<img class="s4-card-avatar" src="/card-avatar.png" alt="" />` +
         `<span class="s4-card-author">${name}</span>` +
       `</div>` +
       `<p class="s4-card-message"><i class="s4-msg-cut"></i>“${msg}”</p>` +
-      `<img class="s4-card-stamp" src="./card-stamp.png" alt="" />` +
+      `<img class="s4-card-stamp" src="/card-stamp.png" alt="" />` +
       `<div class="s4-card-veil"></div>`;
     layer.appendChild(el);
     return {
@@ -1260,7 +1269,7 @@ function buildCoinEdges(coinSelector, edgeCount = 34, step = 1.2) {
     edge.classList.add('coin-edge');
 
     const img = document.createElement('img');
-    img.src = "./medal-edge.svg";   // solid, textless clover — safe to show from both sides
+    img.src = '/medal-edge.svg';   // solid, textless clover — safe to show from both sides
     img.alt = '';
     edge.appendChild(img);
 
