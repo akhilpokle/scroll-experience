@@ -470,8 +470,8 @@
         rgba(255,248,220,0.95) 0%,
         rgba(255,230,170,0.6)  35%,
         rgba(255,210,130,0)    70%);
-      -webkit-mask-image: url(./shimmer.png);
-      mask-image: url(./shimmer.png);
+      -webkit-mask-image: url(/shimmer.png);
+      mask-image: url(/shimmer.png);
       -webkit-mask-repeat: no-repeat;
       mask-repeat: no-repeat;
       -webkit-mask-size: 180% 180%;
@@ -849,7 +849,14 @@
 <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.20/dist/lenis.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/split-type@0.3.4/umd/index.min.js"></script>
 
-<script>
+<script type="module">
+// ─────────────────────────────────────────────────────────────────────────────
+// Asset base — Vite replaces import.meta.env.BASE_URL with the real base path
+// at build time ('/scroll-experience/' on GitHub Pages, '/' in dev preview).
+// All JS asset references are prefixed with ASSET so they work in both envs.
+// ─────────────────────────────────────────────────────────────────────────────
+const ASSET = import.meta.env.BASE_URL;
+
 // ─────────────────────────────────────────────────────────────────────────────
 // LIFERAY CONFIG
 // If Liferay wraps its content in a custom scroll container instead of letting
@@ -1152,14 +1159,14 @@ function initSection4() {
     const el = document.createElement('div');
     el.className = 's4-card';
     el.innerHTML =
-      `<div class="s4-card-shine"></div>` +
-      `<div class="s4-card-header">` +
-        `<img class="s4-card-avatar" src="/card-avatar.png" alt="" />` +
-        `<span class="s4-card-author">${name}</span>` +
+      `<div class=”s4-card-shine”></div>` +
+      `<div class=”s4-card-header”>` +
+        `<img class=”s4-card-avatar” src=”${ASSET}card-avatar.png” alt=”” />` +
+        `<span class=”s4-card-author”>${name}</span>` +
       `</div>` +
-      `<p class="s4-card-message"><i class="s4-msg-cut"></i>“${msg}”</p>` +
-      `<img class="s4-card-stamp" src="/card-stamp.png" alt="" />` +
-      `<div class="s4-card-veil"></div>`;
+      `<p class=”s4-card-message”><i class=”s4-msg-cut”></i>”${msg}”</p>` +
+      `<img class=”s4-card-stamp” src=”${ASSET}card-stamp.png” alt=”” />` +
+      `<div class=”s4-card-veil”></div>`;
     layer.appendChild(el);
     return {
       el,
@@ -1302,7 +1309,7 @@ function buildCoinEdges(coinSelector, edgeCount = 34, step = 1.2) {
     edge.classList.add('coin-edge');
 
     const img = document.createElement('img');
-    img.src = '/medal-edge.svg';   // solid, textless clover — safe to show from both sides
+    img.src = ASSET + 'medal-edge.svg';   // solid, textless clover — safe to show from both sides
     img.alt = '';
     edge.appendChild(img);
 
@@ -1613,12 +1620,12 @@ function initFontPanel() {
 // onProgress(0→1) is called after each asset settles.
 // ─────────────────────────────────────────────────────────────────────────────
 const PRELOAD_ASSETS = [
-  '/gal4.jpg', '/gal3.jpg',
-  '/Far.png', '/Mid.png', '/Near.png', '/BG_galaxy.png',
-  '/glare.png', '/shimmer.png',
-  '/medal.svg', '/medal-edge.svg', '/back.png',
-  '/card-avatar.png', '/card-stamp.png',
-  '/card-texture.svg', '/card-sparks-mask.svg',
+  'gal4.jpg', 'gal3.jpg',
+  'Far.png', 'Mid.png', 'Near.png', 'BG_galaxy.png',
+  'glare.png', 'shimmer.png',
+  'medal.svg', 'medal-edge.svg', 'back.png',
+  'card-avatar.png', 'card-stamp.png',
+  'card-texture.svg', 'card-sparks-mask.svg',
 ];
 
 function preloadAssets(onProgress) {
@@ -1630,7 +1637,7 @@ function preloadAssets(onProgress) {
         onProgress(++settled / PRELOAD_ASSETS.length);
         resolve();
       };
-      img.src = src;
+      img.src = ASSET + src;
     }))
   );
 }
