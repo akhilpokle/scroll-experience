@@ -668,7 +668,6 @@
       transition: width 80ms linear;
     }
   </style>
-  <script type="module" crossorigin src="/scroll-experience/assets/index-Ddi7oOMj.js"></script>
 </head>
 <body>
 
@@ -850,5 +849,830 @@
 <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.20/dist/lenis.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/split-type@0.3.4/umd/index.min.js"></script>
 
+<script>
+// ─────────────────────────────────────────────────────────────────────────────
+// Asset base — derived from the current page URL at runtime.
+// Reads the directory of the current page, which equals the deployment base:
+//   localhost:4173/scroll-experience/ → '/scroll-experience/'
+//   akhilpokle.github.io/scroll-experience/ → '/scroll-experience/'
+// All JS asset references are prefixed with ASSET so they work in both envs.
+// ─────────────────────────────────────────────────────────────────────────────
+const ASSET = new URL('./', document.baseURI).pathname;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LIFERAY CONFIG
+// If Liferay wraps its content in a custom scroll container instead of letting
+// the body scroll, set this to the CSS selector of that container.
+// Example: '#wrapper', '.portlet-content', '[data-scroll-container]'
+// Leave as null to use the default window scroll.
+// ─────────────────────────────────────────────────────────────────────────────
+const LIFERAY_SCROLLER = null;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Utilities
+// ─────────────────────────────────────────────────────────────────────────────
+
+function debounce(func, delay) {
+  let timerId;
+  return (...args) => {
+    clearTimeout(timerId);
+    timerId = setTimeout(() => func.apply(this, args), delay);
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TextSplitter
+// ─────────────────────────────────────────────────────────────────────────────
+class TextSplitter {
+  constructor(textElement, options = {}) {
+    if (!textElement || !(textElement instanceof HTMLElement))
+      throw new Error('Invalid text element provided.');
+    const { resizeCallback, splitTypeTypes } = options;
+    this.textElement = textElement;
+    this.onResize    = typeof resizeCallback === 'function' ? resizeCallback : null;
+    const splitOptions = splitTypeTypes ? { types: splitTypeTypes } : {};
+    this.splitText   = new SplitType(this.textElement, splitOptions);
+    if (this.onResize) this.initResizeObserver();
+    this.previousContainerWidth = null;
+  }
+  initResizeObserver() {
+    this.previousContainerWidth = null;
+    new ResizeObserver(debounce((e) => this.handleResize(e), 100))
+      .observe(this.textElement);
+  }
+  handleResize(entries) {
+    const [{ contentRect }] = entries;
+    const width = Math.floor(contentRect.width);
+    if (this.previousContainerWidth && this.previousContainerWidth !== width) {
+      this.splitText.split();
+      if (this.onResize) this.onResize();
+    }
+    this.previousContainerWidth = width;
+  }
+  getChars() { return this.splitText.chars; }
+}
+
+function splitRoots(roots) {
+  const chars = [];
+  roots.forEach(el => {
+    const s = new TextSplitter(el, { splitTypeTypes: 'words, chars' });
+    const c = s.getChars();
+    if (c) chars.push(...c);
+  });
+  return chars;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Smooth scroll
+// ─────────────────────────────────────────────────────────────────────────────
+function initSmoothScrolling() {
+  const cfg = { lerp: 0.2 };
+  if (LIFERAY_SCROLLER) {
+    const el = document.querySelector(LIFERAY_SCROLLER);
+    if (el) cfg.wrapper = el;
+  }
+  const lenis = new Lenis(cfg);
+  lenis.on('scroll', ScrollTrigger.update);
+  gsap.ticker.add((t) => lenis.raf(t * 1000));
+  gsap.ticker.lagSmoothing(0);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Main scroll experience — ONE pin on .intro-stage, ONE unified timeline
+//
+// Timeline units (1 unit ≈ 100 vh of scroll at scrub:1):
+//   0.0 – 1.0   S1 chars blur out
+//   0.5 – 1.5   S2 chars blur in
+//   3.8 – 4.8   S2 chars blur out
+//   4.3 – 5.3   S3 text chars blur in
+//   4.5 – 5.5   Glare PNG + Spark SVG scale 0→1, fade in
+//
+//  Total: ~5.5 units → end: '+=600%'
+// ─────────────────────────────────────────────────────────────────────────────
+function initScrollExperience() {
+  const stage = document.querySelector('.intro-stage');
+  if (!stage) return;
+
+  // DOM refs
+  const s12Overlay = document.getElementById('s12-overlay');
+  const glarePng   = document.getElementById('glare-png');
+  const sparkSvg = document.getElementById('spark-svg');
+  const stage3Txt = stage.querySelector('.stage-3-text');
+  const dayCount  = document.getElementById('day-count');
+  const galBg     = document.getElementById('gal-bg');
+  const galFar    = document.getElementById('gal-far');
+  const galMid    = document.getElementById('gal-mid');
+  const galNear   = document.getElementById('gal-near');
+  const galFarWrap  = document.getElementById('gal-far-wrap');
+  const galMidWrap  = document.getElementById('gal-mid-wrap');
+  const galNearWrap = document.getElementById('gal-near-wrap');
+
+  // Cover size = larger viewport dimension so the square image fully covers the
+  // screen (no blank edges) at scale 1. We animate SCALE (GPU) instead of
+  // width/height (layout+paint), starting zoomed-in and settling to cover.
+  const minSize = Math.max(stage.offsetWidth, window.innerHeight);
+  const START_SCALE = 4096 / minSize;   // same zoomed-in start as before
+
+  // Split text into chars
+  const chars1 = splitRoots(Array.from(stage.querySelectorAll('.stage-out p')));
+  const chars2 = splitRoots(Array.from(stage.querySelectorAll('.stage-in .blur-text-line')));
+
+  // ── Initial states ──────────────────────────────────────────────────────
+  gsap.set(chars1, { filter: 'blur(0px) brightness(100%)', willChange: 'filter' });
+  gsap.set(chars2, { filter: 'blur(10px) brightness(0%)',  willChange: 'filter' });
+  gsap.set(stage3Txt, { filter: 'blur(10px) brightness(0%)', opacity: 1, willChange: 'filter' });
+
+  // Center glare + spark via GSAP (never use CSS translate on GSAP-animated elements)
+  gsap.set(glarePng, { xPercent: -50, yPercent: -50, scale: 0, opacity: 0 });
+  gsap.set(sparkSvg, { xPercent: -50, yPercent: -50, scale: 0, opacity: 0 });
+
+  // Galaxy layer initial states — fixed cover-size box, started zoomed via scale
+  const galSet = { xPercent: -50, yPercent: -50, width: minSize, height: minSize, scale: START_SCALE, opacity: 0 };
+  gsap.set(galBg,   galSet);
+  gsap.set(galFar,  galSet);
+  gsap.set(galMid,  galSet);
+  gsap.set(galNear, galSet);
+
+  // ── Single unified timeline ──────────────────────────────────────────────
+  const scrollerEl = LIFERAY_SCROLLER ? document.querySelector(LIFERAY_SCROLLER) : undefined;
+  const stCfg = {
+    trigger: stage, start: 'top top',
+    end: '+=1250%', pin: true, pinSpacing: true, scrub: 1,
+  };
+  if (scrollerEl) stCfg.scroller = scrollerEl;
+
+  const tl = gsap.timeline({ scrollTrigger: stCfg });
+
+  // Stage 1 → 2
+  if (chars1.length)
+    tl.to(chars1, { filter: 'blur(10px) brightness(0%)', stagger: 0.04, duration: 1, ease: 'none' }, 0.0);
+  if (chars2.length)
+    tl.to(chars2, { filter: 'blur(0px) brightness(100%)', stagger: 0.04, duration: 1, ease: 'none' }, 0.5);
+
+  // Stage 2 holds, then blurs out
+  if (chars2.length)
+    tl.to(chars2, { filter: 'blur(10px) brightness(0%)', stagger: 0.04, duration: 1, ease: 'none' }, 3.8);
+
+  // ── Stage 3 ─────────────────────────────────────────────────────────────
+
+  // Fade out the S1/S2 overlay so it doesn't sit over S3
+  tl.to(s12Overlay, { opacity: 0, duration: 0.4, ease: 'none' }, 4.1);
+
+  // Stage 3 text blurs in as whole element (avoids SplitType conflict with live counter)
+  tl.to(stage3Txt, { filter: 'blur(0px) brightness(100%)', duration: 1, ease: 'none' }, 4.3);
+
+  // Glare PNG rises in (scale + opacity)
+  tl.to(glarePng, { scale: 1, opacity: 0.2, ease: 'power2.out', duration: 1 }, 4.5);
+
+  // Spark SVG rises in alongside
+  tl.to(sparkSvg, { scale: 1, opacity: 1, ease: 'power2.out', duration: 1 }, 4.5);
+
+  // ── Stage 3 continued: hold on "That's 1 day", then shrink/galaxy ────────
+  // 1 unit hold (5.3→6.5) so users can read "That's 1 day with DBS" at rest
+
+  // Glare + spark shrink to 120px min, ending at 10.5 (same as galaxy layers)
+  // Glare: 766px → 120px = scale 0.157   Spark: 375px → 120px = scale 0.32
+  tl.to(glarePng, { scale: 120 / 766, ease: 'none', duration: 4.0 }, 6.5);
+  tl.to(sparkSvg, { scale: 120 / 375, ease: 'none', duration: 4.0 }, 6.5);
+
+  // Counter ticks 1 → 1825 (fully scrub-driven — goes backwards on scroll-up)
+  const counter = { val: 1 };
+  tl.to(counter, {
+    val: 1825,
+    duration: 4.0,
+    ease: 'none',
+    onUpdate() {
+      const n = Math.round(counter.val);
+      dayCount.textContent = n.toLocaleString();
+    }
+  }, 6.5);
+
+  // bg galaxy fades in + shrinks to cover (slowest layer — duration 3.5, ends at 10.5)
+  tl.to(galBg, { opacity: 0.6, scale: 1, ease: 'none', duration: 3.5 }, 7.0);
+
+  // Star layers fade in
+  tl.to(galFar,  { opacity: 1, ease: 'none', duration: 0.5 }, 7.2);
+  tl.to(galMid,  { opacity: 1, ease: 'none', duration: 0.5 }, 7.4);
+  tl.to(galNear, { opacity: 1, ease: 'none', duration: 0.5 }, 7.6);
+
+  // ── Star flicker — opacity on the WRAPPER (GPU-composited, no repaint) ────
+  // Wrapper opacity multiplies the img's reveal opacity, so it only shows once
+  // the layer has revealed. Far cheaper than filter:brightness on huge images.
+  const rnd = gsap.utils.random;
+  function flicker(el, minO, maxO, minDur, maxDur) {
+    gsap.to(el, {
+      opacity: rnd(minO, maxO),
+      duration: rnd(minDur, maxDur),
+      ease: 'sine.inOut',
+      onComplete: () => flicker(el, minO, maxO, minDur, maxDur)
+    });
+  }
+
+  // Staggered start delays so layers don't sync up on load
+  gsap.delayedCall(rnd(0, 0.5), () => flicker(galFarWrap,  0.82, 1.0, 0.6, 1.4));
+  gsap.delayedCall(rnd(0, 0.5), () => flicker(galMidWrap,  0.80, 1.0, 0.4, 1.0));
+  gsap.delayedCall(rnd(0, 0.5), () => flicker(galNearWrap, 0.78, 1.0, 0.2, 0.7));
+
+  // ── Mouse parallax for galaxy layers ────────────────────────────────────
+  // gsap.quickTo gives butter-smooth lag — x/y are separate from the scroll
+  // timeline (scale/opacity), all composited into one GPU transform.
+  const qx = (el, str) => gsap.quickTo(el, 'x', { duration: str, ease: 'power2.out' });
+  const qy = (el, str) => gsap.quickTo(el, 'y', { duration: str, ease: 'power2.out' });
+
+  const pFarX  = qx(galFar,  0.8);  const pFarY  = qy(galFar,  0.8);
+  const pMidX  = qx(galMid,  0.6);  const pMidY  = qy(galMid,  0.6);
+  const pNearX = qx(galNear, 0.4);  const pNearY = qy(galNear, 0.4);
+
+  window.addEventListener('mousemove', (e) => {
+    // Normalise cursor offset from screen centre: -1 → +1
+    const dx = (e.clientX - window.innerWidth  / 2) / (window.innerWidth  / 2);
+    const dy = (e.clientY - window.innerHeight / 2) / (window.innerHeight / 2);
+
+    pFarX (dx * 12);  pFarY (dy * 12);
+    pMidX (dx * 24);  pMidY (dy * 24);
+    pNearX(dx * 40);  pNearY(dy * 40);
+  });
+
+  // Star layers shrink (scale → 1 = cover) at different rates — all end at 10.5
+  // Far: slowest (3.3)   Mid: medium (3.1)   Near: fastest (2.9)
+  tl.to(galFar,  { scale: 1, ease: 'none', duration: 3.3 }, 7.2);
+  tl.to(galMid,  { scale: 1, ease: 'none', duration: 3.1 }, 7.4);
+  tl.to(galNear, { scale: 1, ease: 'none', duration: 2.9 }, 7.6);
+
+  // ── Dead scroll hold — users experience the full galaxy (10.5 → 11.0) ───
+  tl.to({}, { duration: 0.5 }, 10.5);
+
+  // ── Fade galaxy + glare + spark + S3 text out (11.0 → 12.0) ─────────────
+  tl.to([galBg, galFar, galMid, galNear], { opacity: 0, ease: 'none', duration: 1 }, 11.0);
+  tl.to([glarePng, sparkSvg],             { opacity: 0, ease: 'none', duration: 1 }, 11.0);
+  tl.to(stage3Txt,                        { opacity: 0, filter: 'blur(8px)', ease: 'none', duration: 0.8 }, 11.0);
+
+  // ── Hold on black, then pin releases (12.0 → 12.5) ──────────────────────
+  tl.to({}, { duration: 0.5 }, 12.0);
+
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Section 4 — "127 times" + peer boxes
+//
+// Timeline units:
+//   0.0 – 1.0   count + subtitle blur in
+//   0.8 – 2.8   9 boxes stagger in
+//   2.8 – 4.0   dead hold
+// ─────────────────────────────────────────────────────────────────────────────
+function initSection4() {
+  const s4    = document.querySelector('.section-4');
+  const layer = document.getElementById('s4-3d-layer');
+  if (!s4 || !layer) return;
+
+  const scrollerEl = LIFERAY_SCROLLER ? document.querySelector(LIFERAY_SCROLLER) : undefined;
+  const rnd = gsap.utils.random;
+
+  // ── 15 dummy testimonial cards ───────────────────────────────────────────
+  const messages = [
+    ["I'm really glad to have your support over the past 2 years. Thank you for always checking in and offering a listening ear.", "~ Rae Lee"],
+    ["Thank you for being such an awesome team mate and partner. You always find the best creative references in just minutes.", "~ Chris Hemsworth"],
+    ["Your explorative, creative, and humorous spirit are much appreciated! Thanks for helping out at the 11th hour.", "~ Timothy Tan"],
+    ["Thank you for the trust. I feel very honoured whenever you reach out to consult. Your curiosity is inspiring.", "~ L.M Gupta"],
+    ["Appreciate the trust with your questions — glad I could help out! Always a pleasure working alongside you.", "~"],
+    ["A huge thank you for your outstanding support on the project! I'm so inspired by your growth mindset.", "~ Sarah Chen"],
+    ["It has been such a joy working with you. Your passion and thoughtfulness never go unnoticed.", "~ David Kim"],
+    ["Working with you has been one of the highlights of this year. Your dedication makes every collab effortless.", "~"],
+    ["You bring such genuine energy and care to everything you do. Thank you for lifting everyone around you.", "~ Priya N"],
+    ["Thanks for always holding space for conversations and enabling those random food trips! You're the best.", "~ Marcus Lee"],
+    ["Your honest, constructive critique of my designs makes me want to be better at my craft every day.", "~ Aisha R"],
+    ["The way you show up with a positive attitude is contagious. Grateful to have you on the team.", "~ Tom Wright"],
+    ["Thank you for the invaluable candid conversations and trust you've extended over the years.", "~ Nina P"],
+    ["Looking at the beautiful prototype you designed makes me want to push my own work further. Inspiring!", "~ Kevin O"],
+    ["You made a significant impact on the project and I truly hope we get to work together again soon.", "~ Jess M"],
+  ];
+
+  // Assign cards to randomly-sized waves (1–4 cards each), max 4 per wave
+  const waves = [];
+  let idx = 0;
+  while (idx < messages.length) {
+    const size = Math.min(messages.length - idx, Math.round(rnd(1, 4)));
+    waves.push(Array.from({ length: size }, () => idx++));
+  }
+
+  // ── Build card DOM (styled from the Figma testimonial design) ─────────────
+  const cards = messages.map(([msg, author]) => {
+    const name = author.replace(/^~\s*/, '').trim() || 'Anonymous';
+    const el = document.createElement('div');
+    el.className = 's4-card';
+    el.innerHTML =
+      `<div class=”s4-card-shine”></div>` +
+      `<div class=”s4-card-header”>` +
+        `<img class=”s4-card-avatar” src=”${ASSET}card-avatar.png” alt=”” />` +
+        `<span class=”s4-card-author”>${name}</span>` +
+      `</div>` +
+      `<p class=”s4-card-message”><i class=”s4-msg-cut”></i>”${msg}”</p>` +
+      `<img class=”s4-card-stamp” src=”${ASSET}card-stamp.png” alt=”” />` +
+      `<div class=”s4-card-veil”></div>`;
+    layer.appendChild(el);
+    return {
+      el,
+      veil: el.querySelector('.s4-card-veil'),
+      shine: el.querySelector('.s4-card-shine'),
+      cut:  el.querySelector('.s4-msg-cut'),
+      msg:  el.querySelector('.s4-card-message'),
+      x: 0, y: 0, rot: 0,
+    };
+  });
+
+  // ── Set each card's bottom-right clearance height = its message height ────
+  // (cards are a fixed 360px wide, so this only needs re-running when the
+  // quote font finishes loading — not on resize.)
+  function shapeCards() {
+    cards.forEach(c => {
+      if (!c.cut || !c.msg) return;
+      c.cut.style.height = '0px';                 // measure without the carve
+      let h = c.msg.offsetHeight;
+      c.cut.style.height = h + 'px';              // apply carve (may add a line)
+      h = c.msg.offsetHeight;                     // re-measure
+      c.cut.style.height = h + 'px';              // converge
+    });
+  }
+  shapeCards();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(shapeCards);
+
+  // ── Collision-free placement WITHIN each wave (cross-wave overlap is fine) ──
+  const MIN_DX = 370, MIN_DY = 240;     // min center spacing (card ≈ 340×200)
+  waves.forEach(wave => {
+    const placed = [];
+    wave.forEach(ci => {
+      let x, y, ok = false;
+      for (let tries = 0; tries < 60 && !ok; tries++) {
+        x = rnd(-650, 650);
+        y = rnd(-340, 340);
+        if (Math.abs(x) < 240) x += (x < 0 ? -240 : 240); // keep clear of center text
+        ok = placed.every(p => Math.abs(p.x - x) > MIN_DX || Math.abs(p.y - y) > MIN_DY);
+      }
+      placed.push({ x, y });
+      cards[ci].x = x;
+      cards[ci].y = y;
+      cards[ci].rot = rnd(-14, 14);
+    });
+  });
+
+  // Depth keyframes
+  const Z_START = -2200;   // deep parked origin (invisible)
+  const Z_FADE  = -1400;   // fade-in completes here (reaches the faint floor)
+  const Z_PAST  = 700;     // exit, past the camera
+
+  // Initial state: parked deep — opaque card fully veiled (pitch black)
+  cards.forEach(c => {
+    gsap.set(c.el, { x: c.x, y: c.y, z: Z_START, rotation: c.rot, opacity: 1 });
+    c.veil.style.opacity = 1;
+  });
+
+  const { mapRange, clamp } = gsap.utils;
+
+  // Black veil opacity by depth: pitch black far → gray near (gradual emerge)
+  function veilOpacity(z) {
+    if (z <= Z_START) return 1;                                  // parked: full black
+    if (z <= Z_FADE)  return mapRange(Z_START, Z_FADE, 1, 0.7, z); // gradual emerge from black
+    if (z <= 0)       return mapRange(Z_FADE, 0, 0.7, 0, z);       // brighten to full gray
+    return 0;                                                     // stays gray through exit
+  }
+  // Card stays fully opaque on approach (clean occlusion); only fades as it passes
+  function cardOpacity(z) {
+    return z <= 0 ? 1 : clamp(0, 1, mapRange(0, Z_PAST, 1, 0, z));
+  }
+
+  // ── Pinned scrub timeline ────────────────────────────────────────────────
+  // Continuous dolly: each wave's cards travel depth→past; STEP small enough
+  // that ~3 waves are in flight at once. Opacity is recomputed from live Z.
+  const STEP = 0.7;                  // smaller gap => more waves visible at once
+  const JOURNEY = 2.8;               // units for a card to go deep-origin → past
+  // lastEnd + re-show(0.4) + blur-out(1.0) + hold(0.5)
+  const total = 1 + (waves.length - 1) * STEP + JOURNEY + 1.9;
+  const stCfg = {
+    trigger: s4, start: 'top top',
+    end: '+=' + Math.round(total * 100) + '%',
+    pin: true, pinSpacing: true, scrub: 1,
+    onUpdate() {
+      // Drive each card's depth-darkness (veil), exit fade, and rainbow sweep from Z
+      cards.forEach(c => {
+        const z = Number(gsap.getProperty(c.el, 'z'));
+        c.veil.style.opacity = veilOpacity(z);
+        c.el.style.opacity   = cardOpacity(z);
+        // Faint white shimmer sweeps along the border as the card travels
+        const shine = clamp(-40, 140, mapRange(-1600, 100, 140, -40, z));
+        c.shine.style.setProperty('--shine', shine + '%');
+      });
+    },
+  };
+  if (scrollerEl) stCfg.scroller = scrollerEl;
+
+  const tl = gsap.timeline({ scrollTrigger: stCfg });
+
+  // ── Title + subtitle blur-in (like Sections 1 & 2) ────────────────────────
+  const titleChars    = splitRoots([s4.querySelector('.s4-count')]);
+  const subtitleChars = splitRoots([s4.querySelector('.s4-subtitle')]);
+  gsap.set(titleChars,    { filter: 'blur(10px) brightness(0%)', willChange: 'filter' });
+  gsap.set(subtitleChars, { filter: 'blur(10px) brightness(0%)', willChange: 'filter' });
+  tl.to(titleChars,    { filter: 'blur(0px) brightness(100%)', stagger: 0.04, duration: 1, ease: 'none' }, 0.0);
+  tl.to(subtitleChars, { filter: 'blur(0px) brightness(100%)', stagger: 0.02, duration: 1, ease: 'none' }, 0.3);
+
+  // ── Card dolly — each wave staggered, cards travel deep-origin → past ─────
+  waves.forEach((wave, w) => {
+    const start = 1 + w * STEP;
+    const waveCards = wave.map(ci => cards[ci].el);
+    tl.to(waveCards, { z: Z_PAST, ease: 'none', duration: JOURNEY }, start);
+  });
+
+  // ── Galaxy color-dodge overlay: visible for text in/out, hidden while cards fly ──
+  const overlay = document.getElementById('s4-overlay');
+  gsap.set(overlay, { opacity: 0 });
+  tl.to(overlay, { opacity: 1, ease: 'none', duration: 0.5 }, 0.0);   // appear with text-in
+  tl.to(overlay, { opacity: 0, ease: 'none', duration: 0.4 }, 1.0);   // hide as first cards emerge
+
+  // ── After all cards have left frame: re-show galaxy, then blur the text out ──
+  const lastEnd = 1 + (waves.length - 1) * STEP + JOURNEY;   // last card fully gone
+  tl.to(overlay, { opacity: 1, ease: 'none', duration: 0.4 }, lastEnd);
+  tl.to(titleChars,    { filter: 'blur(10px) brightness(0%)', stagger: 0.03, duration: 1, ease: 'none' }, lastEnd + 0.4);
+  tl.to(subtitleChars, { filter: 'blur(10px) brightness(0%)', stagger: 0.02, duration: 1, ease: 'none' }, lastEnd + 0.6);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// buildCoinEdges — stacks SVG copies along Z to fake medal thickness
+// edgeCount: number of layers   step: px gap between each layer
+// ─────────────────────────────────────────────────────────────────────────────
+function buildCoinEdges(coinSelector, edgeCount = 34, step = 1.2) {
+  const coinEl = document.querySelector(coinSelector);
+  if (!coinEl) return;
+
+  // Remove any old edges
+  coinEl.querySelectorAll('.coin-edge').forEach(e => e.remove());
+
+  for (let i = 0; i < edgeCount; i++) {
+    const edge = document.createElement('div');
+    edge.classList.add('coin-edge');
+
+    const img = document.createElement('img');
+    img.src = ASSET + 'medal-edge.svg';   // solid, textless clover — safe to show from both sides
+    img.alt = '';
+    edge.appendChild(img);
+
+    const offset = (i - edgeCount / 2) * step;
+    edge.style.transform = `translateZ(${offset}px)`;
+    coinEl.appendChild(edge);
+  }
+
+  // Push front + back faces outside the edge stack
+  const maxOffset = (edgeCount / 2) * step;
+  const front = coinEl.querySelector('.coin-front');
+  const back  = coinEl.querySelector('.coin-back');
+  if (front) front.style.transform = `rotateY(0deg) translateZ(${maxOffset}px)`;
+  if (back)  back.style.transform  = `rotateY(180deg) translateZ(${maxOffset}px)`;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Section 6 — Medal + text
+// ─────────────────────────────────────────────────────────────────────────────
+function initSection6() {
+  const s6          = document.querySelector('.section-6');
+  const medalScene  = document.getElementById('medal-scene');
+  const medalLaunch = document.getElementById('medal-launch');
+  const medalCoin   = document.getElementById('medal-coin');
+  const shimmerEl   = document.getElementById('medal-shimmer');
+  const medalText   = document.getElementById('medal-text');
+  const titleEl     = medalText.querySelector('.medal-title');
+  const subtitleEl  = medalText.querySelector('.medal-subtitle');
+  const frontFace   = medalCoin.querySelector('.coin-front');
+  const backFace    = medalCoin.querySelector('.coin-back');
+  if (!s6 || !medalScene) return;
+
+  // Face visibility is handled purely by CSS backface-visibility — when the
+  // coin flips, away-facing layers (front + edges) auto-hide, so only the
+  // correctly-oriented back face shows. No JS opacity juggling needed.
+
+  const scrollerEl = LIFERAY_SCROLLER ? document.querySelector(LIFERAY_SCROLLER) : undefined;
+
+  // ── Build 3D coin edges — all visible, scaled uniformly with the medal ───
+  buildCoinEdges('#medal-coin', 34, 1.2);
+
+  // ── Split text into chars for blur-in ───────────────────────────────────
+  const titleChars    = splitRoots([titleEl]);
+  const subtitleChars = splitRoots([subtitleEl]);
+
+  // ── Initial states ───────────────────────────────────────────────────────
+  // Uniform 3D scale — scaleZ included so depth shrinks WITH size (GSAP's
+  // `scale` only sets X/Y; Z must be set explicitly or the edge stack stays
+  // full-depth at tiny sizes, creating a thin tall tower)
+  gsap.set(medalLaunch, { scale: 0.02, scaleZ: 0.02, rotateY: 0 });
+  gsap.set(titleChars,    { filter: 'blur(10px) brightness(0%)', willChange: 'filter' });
+  gsap.set(subtitleChars, { filter: 'blur(10px) brightness(0%)', willChange: 'filter' });
+
+  // ── Pinned scrub timeline ────────────────────────────────────────────────
+  const stCfg = {
+    trigger: s6, start: 'top top',
+    end: '+=600%', pin: true, pinSpacing: true, scrub: 1,
+  };
+  if (scrollerEl) stCfg.scroller = scrollerEl;
+
+  const tl = gsap.timeline({ scrollTrigger: stCfg });
+
+  // Grow — scaleZ animates with scale so depth stays proportional
+  tl.to(medalLaunch, { scale: 1, scaleZ: 1, ease: 'power2.out', duration: 2 }, 0.0);
+
+  // Rotation phase 1 — FAST spin while small (0 → ~100px). 3 quick spins
+  // crammed into the first 0.35 units mask the layer-separation while tiny.
+  tl.to(medalLaunch, { rotateY: 1080, ease: 'power1.out', duration: 0.35 }, 0.0);
+
+  // Rotation phase 2 — SLOW single spin as it settles; lands on front face (1440 = 4×360)
+  tl.to(medalLaunch, { rotateY: 1440, ease: 'power1.out', duration: 1.65 }, 0.35);
+
+  // Title blurs in
+  tl.to(titleChars,    { filter: 'blur(0px) brightness(100%)', stagger: 0.03, duration: 1, ease: 'none' }, 1.5);
+
+  // Subtext blurs in
+  tl.to(subtitleChars, { filter: 'blur(0px) brightness(100%)', stagger: 0.015, duration: 1, ease: 'none' }, 2.0);
+
+  // Dead hold — users experience the full message
+  tl.to({}, { duration: 1.5 }, 3.0);
+
+  // ── Exit (4.5 → 5.5) ──────────────────────────────────────────────────────
+  // Text blurs out; in parallel the medal spins while fading away.
+  tl.to(titleChars,    { filter: 'blur(10px) brightness(0%)', stagger: 0.03, duration: 1, ease: 'none' }, 4.5);
+  tl.to(subtitleChars, { filter: 'blur(10px) brightness(0%)', stagger: 0.02, duration: 1, ease: 'none' }, 4.6);
+  // Fade the 2D wrapper (keeps the inner 3D intact — no flatten)
+  tl.to('#medal-fade', { opacity: 0, ease: 'power2.in', duration: 1 }, 4.5);
+  // Full spin while fading — thickness/offset stays visible the whole time now
+  tl.to(medalLaunch,   { rotateY: 1800, ease: 'none', duration: 1 }, 4.5);
+  tl.to({}, { duration: 0.5 }, 5.5);   // hold on black before pin releases
+
+  // ── Launch animation — commented out, preserved for future use ───────────
+  // ScrollTrigger.create({ trigger: s6, start: 'top 80%', onEnter() {
+  //   medalLaunch.classList.add('launch-active'); } });
+
+  // ── Click to flip ────────────────────────────────────────────────────────
+  medalScene.addEventListener('click', () => {
+    medalCoin.classList.toggle('is-flipped');
+  });
+
+  // ── Mouse tilt + shimmer (only active once medal reaches full size) ──────
+  const MAX_TILT = 25;
+
+  medalScene.addEventListener('mousemove', (e) => {
+    // Only activate tilt after medal has grown to near full size
+    if (Number(gsap.getProperty(medalLaunch, 'scaleX')) < 0.9) return;
+
+    const rect = medalScene.getBoundingClientRect();
+    const cx = rect.left + rect.width  / 2;
+    const cy = rect.top  + rect.height / 2;
+    const dx = (e.clientX - cx) / (rect.width  / 2);
+    const dy = (e.clientY - cy) / (rect.height / 2);
+
+    const rx = -Math.max(-1, Math.min(1, dy)) * MAX_TILT;
+    const ry =  Math.max(-1, Math.min(1, dx)) * MAX_TILT;
+    medalScene.style.transform = `rotateX(${rx}deg) rotateY(${ry}deg)`;
+
+    const sx = ((e.clientX - rect.left) / rect.width)  * 100;
+    const sy = ((e.clientY - rect.top)  / rect.height) * 100;
+    shimmerEl.style.setProperty('--sx', `${sx}%`);
+    shimmerEl.style.setProperty('--sy', `${sy}%`);
+    shimmerEl.style.opacity = '1';
+  });
+
+  medalScene.addEventListener('mouseleave', () => {
+    medalScene.style.transform = 'rotateX(0deg) rotateY(0deg)';
+    shimmerEl.style.opacity = '0';
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Section 7 — Write a letter to your future self
+// Timeline: 0→1 blur in, 1→2.5 hold. Pin +=250%
+// ─────────────────────────────────────────────────────────────────────────────
+function initSection7() {
+  const s7 = document.querySelector('.section-7');
+  if (!s7) return;
+
+  const titleChars    = splitRoots([s7.querySelector('.s7-title')]);
+  const subtitleChars = splitRoots([s7.querySelector('.s7-subtitle')]);
+  gsap.set(titleChars,    { filter: 'blur(10px) brightness(0%)', willChange: 'filter' });
+  gsap.set(subtitleChars, { filter: 'blur(10px) brightness(0%)', willChange: 'filter' });
+
+  const scrollerEl = LIFERAY_SCROLLER ? document.querySelector(LIFERAY_SCROLLER) : undefined;
+  const stCfg = {
+    trigger: s7, start: 'top top',
+    end: '+=250%', pin: true, pinSpacing: true, scrub: 1,
+  };
+  if (scrollerEl) stCfg.scroller = scrollerEl;
+
+  const tl = gsap.timeline({ scrollTrigger: stCfg });
+  tl.to(titleChars,    { filter: 'blur(0px) brightness(100%)', stagger: 0.03, duration: 1, ease: 'none' }, 0.0);
+  tl.to(subtitleChars, { filter: 'blur(0px) brightness(100%)', stagger: 0.015, duration: 1, ease: 'none' }, 0.3);
+  tl.to({}, { duration: 1.5 }, 1.0);   // hold
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Font playground — live type controls (dev tool)
+// ─────────────────────────────────────────────────────────────────────────────
+function initFontPanel() {
+  const root = document.documentElement;
+  const body = document.getElementById('fp-body');
+  if (!body) return;
+
+  // Shared font list (any font usable in any role)
+  let FONTS = [
+    { label: 'Bricolage Grotesque', css: "'Bricolage Grotesque', sans-serif" },
+    { label: 'Space Grotesk',       css: "'Space Grotesk', sans-serif" },
+    { label: 'Hanken Grotesk',      css: "'Hanken Grotesk', sans-serif" },
+    { label: 'Inter',               css: "'Inter', sans-serif" },
+    { label: 'Geist',               css: "'Geist', sans-serif" },
+    { label: 'Clash Display',       css: "'Clash Display', sans-serif" },
+    { label: 'General Sans',        css: "'General Sans', sans-serif" },
+    { label: 'Fraunces',            css: "'Fraunces', Georgia, serif" },
+    { label: 'Newsreader',          css: "'Newsreader', Georgia, serif" },
+    { label: 'Instrument Serif',    css: "'Instrument Serif', Georgia, serif" },
+    { label: 'Gambetta',            css: "'Gambetta', Georgia, serif" },
+    { label: 'Times New Roman',     css: "'Times New Roman', Times, serif" },
+  ];
+  const WEIGHTS = ['300', '400', '500', '600', '700', '800'];
+  const STYLES  = ['normal', 'italic'];
+
+  const GROUPS = [
+    { key: 'display', label: 'Display (headings)', vf: '--font-display', vw: '--weight-display', vs: '--style-display',
+      def: { font: "'Times New Roman', Times, serif", weight: '300', style: 'normal' } },
+    { key: 'body', label: 'Body (subtitles)', vf: '--font-body', vw: '--weight-body', vs: '--style-body',
+      def: { font: "'Inter', sans-serif", weight: '300', style: 'normal' } },
+    { key: 'quote', label: 'Card quote', vf: '--font-quote', vw: '--weight-quote', vs: '--style-quote',
+      def: { font: "'Fraunces', Georgia, serif", weight: '300', style: 'italic' } },
+  ];
+
+  const LS_KEY = 'fontPlayground_v2';
+  const saved = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
+
+  const opt = (val, label, sel) =>
+    `<option value="${val.replace(/"/g, '&quot;')}"${val === sel ? ' selected' : ''}>${label || val}</option>`;
+
+  // Build a group's row markup
+  function groupHTML(g) {
+    const cur = saved[g.key] || g.def;
+    const fams = FONTS.map(f => opt(f.css, f.label, cur.font)).join('');
+    const wts  = WEIGHTS.map(w => opt(w, w, cur.weight)).join('');
+    const sts  = STYLES.map(s => opt(s, s, cur.style)).join('');
+    return `<div class="fp-group" data-key="${g.key}">
+      <label>${g.label}</label>
+      <div class="fp-row">
+        <select class="fp-f">${fams}</select>
+        <select class="fp-s">${sts}</select>
+        <select class="fp-w">${wts}</select>
+      </div>
+    </div>`;
+  }
+
+  // Inject groups before the .fp-add block
+  const addBlock = body.querySelector('.fp-add');
+  GROUPS.forEach(g => addBlock.insertAdjacentHTML('beforebegin', groupHTML(g)));
+
+  function apply(g, font, weight, style) {
+    root.style.setProperty(g.vf, font);
+    root.style.setProperty(g.vw, weight);
+    root.style.setProperty(g.vs, style);
+  }
+  function persist() {
+    const data = {};
+    GROUPS.forEach(g => {
+      const el = body.querySelector(`.fp-group[data-key="${g.key}"]`);
+      data[g.key] = {
+        font:   el.querySelector('.fp-f').value,
+        weight: el.querySelector('.fp-w').value,
+        style:  el.querySelector('.fp-s').value,
+      };
+    });
+    localStorage.setItem(LS_KEY, JSON.stringify(data));
+  }
+
+  // Apply saved/default + wire change handlers
+  GROUPS.forEach(g => {
+    const cur = saved[g.key] || g.def;
+    apply(g, cur.font, cur.weight, cur.style);
+    const el = body.querySelector(`.fp-group[data-key="${g.key}"]`);
+    el.querySelectorAll('select').forEach(sel => {
+      sel.addEventListener('change', () => {
+        apply(g, el.querySelector('.fp-f').value, el.querySelector('.fp-w').value, el.querySelector('.fp-s').value);
+        persist();
+      });
+    });
+  });
+
+  // ── Hot-add a Google Font by name ────────────────────────────────────────
+  document.getElementById('fp-add-btn').addEventListener('click', () => {
+    const input = document.getElementById('fp-add-input');
+    const name = input.value.trim();
+    if (!name) return;
+    const fam = name.replace(/\s+/g, '+');
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = `https://fonts.googleapis.com/css2?family=${fam}:ital,wght@0,300..800;1,300..800&display=swap`;
+    link.onerror = () => { link.href = `https://fonts.googleapis.com/css2?family=${fam}&display=swap`; };
+    document.head.appendChild(link);
+
+    const css = `'${name}', sans-serif`;
+    if (!FONTS.some(f => f.label === name)) FONTS.push({ label: name + ' ✦', css });
+    // Append to every family dropdown
+    body.querySelectorAll('.fp-f').forEach(sel => {
+      sel.insertAdjacentHTML('beforeend', opt(css, name + ' ✦', sel.value));
+    });
+    input.value = '';
+  });
+
+  // ── Copy current settings (paste back to bake them in) ───────────────────
+  document.getElementById('fp-copy').addEventListener('click', async () => {
+    const lines = GROUPS.flatMap(g => {
+      const el = body.querySelector(`.fp-group[data-key="${g.key}"]`);
+      return [
+        `${g.vf}: ${el.querySelector('.fp-f').value};`,
+        `${g.vw}: ${el.querySelector('.fp-w').value};`,
+        `${g.vs}: ${el.querySelector('.fp-s').value};`,
+      ];
+    });
+    const text = ':root {\n  ' + lines.join('\n  ') + '\n}';
+    try { await navigator.clipboard.writeText(text); } catch (e) {}
+    const btn = document.getElementById('fp-copy');
+    btn.textContent = 'Copied!'; setTimeout(() => (btn.textContent = 'Copy settings'), 1200);
+  });
+
+  // ── Reset to defaults ────────────────────────────────────────────────────
+  document.getElementById('fp-reset').addEventListener('click', () => {
+    localStorage.removeItem(LS_KEY);
+    GROUPS.forEach(g => {
+      apply(g, g.def.font, g.def.weight, g.def.style);
+      const el = body.querySelector(`.fp-group[data-key="${g.key}"]`);
+      el.querySelector('.fp-f').value = g.def.font;
+      el.querySelector('.fp-w').value = g.def.weight;
+      el.querySelector('.fp-s').value = g.def.style;
+    });
+  });
+
+  // ── Collapse toggle ──────────────────────────────────────────────────────
+  document.getElementById('fp-toggle').addEventListener('click', () => {
+    const panel = document.getElementById('font-panel');
+    panel.classList.toggle('collapsed');
+    document.getElementById('fp-toggle').textContent = panel.classList.contains('collapsed') ? '+' : '–';
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Asset preloader — resolves after every image is fetched (or errored).
+// onProgress(0→1) is called after each asset settles.
+// ─────────────────────────────────────────────────────────────────────────────
+const PRELOAD_ASSETS = [
+  'gal4.jpg', 'gal3.jpg',
+  'Far.png', 'Mid.png', 'Near.png',
+  'glare.png', 'shimmer.png',
+  'medal.svg', 'medal-edge.svg', 'back.png',
+  'card-avatar.png', 'card-stamp.png',
+];
+
+function preloadAssets(onProgress) {
+  let settled = 0;
+  return Promise.all(
+    PRELOAD_ASSETS.map(src => new Promise(resolve => {
+      const img = new Image();
+      img.onload = img.onerror = () => {
+        onProgress(++settled / PRELOAD_ASSETS.length);
+        resolve();
+      };
+      img.src = ASSET + src;
+    }))
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Boot — wait for all assets, then fade loader and start experience
+// ─────────────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  gsap.registerPlugin(ScrollTrigger);
+  initFontPanel();
+
+  const loaderBar = document.getElementById('loader-bar');
+  const loader    = document.getElementById('loader');
+
+  preloadAssets(progress => {
+    loaderBar.style.width = (progress * 100) + '%';
+  }).then(() => {
+    // Small pause so the bar visibly hits 100% before fading
+    gsap.to(loader, {
+      autoAlpha: 0,
+      duration: 0.5,
+      delay: 0.15,
+      ease: 'power1.in',
+      onComplete: () => loader.remove(),
+    });
+    requestAnimationFrame(() => {
+      initSmoothScrolling();
+      initScrollExperience();
+      initSection4();
+      initSection6();
+      initSection7();
+    });
+  });
+});
+</script>
 </body>
 </html>
