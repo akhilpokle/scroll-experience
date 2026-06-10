@@ -639,9 +639,42 @@
     }
     #font-panel .fp-body > button:hover,
     .fp-add button:hover { background: #353535; }
+
+    /* ── Loader ───────────────────────────────────────────────────────────── */
+    #loader {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      padding-bottom: 52px;
+      pointer-events: none;
+    }
+    #loader-track {
+      width: min(240px, 40vw);
+      height: 1px;
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 1px;
+      overflow: hidden;
+    }
+    #loader-bar {
+      height: 100%;
+      width: 0%;
+      background: #fff;
+      border-radius: 1px;
+      transition: width 80ms linear;
+    }
   </style>
 </head>
 <body>
+
+<!-- ── Loader — shown until all image assets are fetched ─────────────────── -->
+<div id="loader">
+  <div id="loader-track"><div id="loader-bar"></div></div>
+</div>
 
 <!-- ── Font playground control panel (dev tool — remove before production) ── -->
 <div id="font-panel">
@@ -1576,17 +1609,60 @@ function initFontPanel() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Boot
+// Asset preloader — resolves after every image is fetched (or errored).
+// onProgress(0→1) is called after each asset settles.
+// ─────────────────────────────────────────────────────────────────────────────
+const PRELOAD_ASSETS = [
+  '/gal4.jpg', '/gal3.jpg',
+  '/Far.png', '/Mid.png', '/Near.png', '/BG_galaxy.png',
+  '/glare.png', '/shimmer.png',
+  '/medal.svg', '/medal-edge.svg', '/back.png',
+  '/card-avatar.png', '/card-stamp.png',
+  '/card-texture.svg', '/card-sparks-mask.svg',
+];
+
+function preloadAssets(onProgress) {
+  let settled = 0;
+  return Promise.all(
+    PRELOAD_ASSETS.map(src => new Promise(resolve => {
+      const img = new Image();
+      img.onload = img.onerror = () => {
+        onProgress(++settled / PRELOAD_ASSETS.length);
+        resolve();
+      };
+      img.src = src;
+    }))
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Boot — wait for all assets, then fade loader and start experience
 // ─────────────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   gsap.registerPlugin(ScrollTrigger);
   initFontPanel();
-  requestAnimationFrame(() => {
-    initSmoothScrolling();
-    initScrollExperience();
-    initSection4();
-    initSection6();
-    initSection7();
+
+  const loaderBar = document.getElementById('loader-bar');
+  const loader    = document.getElementById('loader');
+
+  preloadAssets(progress => {
+    loaderBar.style.width = (progress * 100) + '%';
+  }).then(() => {
+    // Small pause so the bar visibly hits 100% before fading
+    gsap.to(loader, {
+      autoAlpha: 0,
+      duration: 0.5,
+      delay: 0.15,
+      ease: 'power1.in',
+      onComplete: () => loader.remove(),
+    });
+    requestAnimationFrame(() => {
+      initSmoothScrolling();
+      initScrollExperience();
+      initSection4();
+      initSection6();
+      initSection7();
+    });
   });
 });
 </script>
