@@ -7,7 +7,7 @@ import { defineConfig } from 'vite'
 // pnpm dev: vite build --watch (rebuilds docs/) + vite preview (localhost:4173/scroll-experience/)
 // pnpm build: one-off production build to docs/
 export default defineConfig({
-  base: '/scroll-experience/',
+  base: './',
   root: 'src',
   publicDir: 'assets',
   build: {

@@ -285,9 +285,23 @@
       width: 32px; height: 32px;
       border-radius: 50%;
       border: 1px solid #fff;
-      object-fit: cover;
       flex: none;
+    }
+    .s4-card-avatar-img {
+      object-fit: cover;
       transform: scaleX(-1);    /* flipped, per design */
+    }
+    /* Fallback for people without a photo: initials on a black circle */
+    .s4-card-avatar-initials {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #000;
+      color: #fff;
+      font-family: var(--font-quote);
+      font-style: var(--style-quote);
+      font-weight: 600;
+      font-size: 12px;
     }
 
     .s4-card-author {
@@ -326,6 +340,15 @@
         11.11% calc(100% - 63px),
         100% calc(100% - 63px)
       );
+    }
+
+    /* Decorative quote mark, sits behind the header/message/stamp */
+    .s4-card-quote {
+      position: absolute;
+      top: 48px; left: 16px;
+      width: 32px; height: auto;
+      z-index: 0;
+      pointer-events: none;
     }
 
     /* Red circular brand stamp, bottom-right (over the footer area) */
@@ -470,8 +493,8 @@
         rgba(255,248,220,0.95) 0%,
         rgba(255,230,170,0.6)  35%,
         rgba(255,210,130,0)    70%);
-      -webkit-mask-image: url(/scroll-experience/shimmer.png);
-      mask-image: url(/scroll-experience/shimmer.png);
+      -webkit-mask-image: url(shimmer.png);
+      mask-image: url(shimmer.png);
       -webkit-mask-repeat: no-repeat;
       mask-repeat: no-repeat;
       -webkit-mask-size: 180% 180%;
@@ -546,15 +569,29 @@
       height: 100vh;
       background: #000;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
+      gap: 48px;
       overflow: hidden;
     }
 
     .s7-inner {
+      position: relative;
       text-align: center;
       max-width: 720px;
       padding: 0 24px;
+    }
+
+    /* Color-dodge galaxy overlay on the heading text — same treatment as S1/S2 */
+    .s7-overlay {
+      position: absolute;
+      inset: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+      mix-blend-mode: color-dodge;
+      pointer-events: none;
+      z-index: 2;
     }
 
     .s7-title {
@@ -667,6 +704,94 @@
       border-radius: 1px;
       transition: width 80ms linear;
     }
+
+    /* ── Section Envelope ───────────────────────────────────────────────────── */
+    :root {
+      --env-mouth: 44%;   /* % from bottom = top of front-pocket triangle. Tune if misaligned. */
+    }
+
+    /* ── Section 7 — Postcard ───────────────────────────────────────────────── */
+    .postcard {
+      position: relative;
+      width: min(760px, 92vw);
+      height: 400px;
+      background: #fff;
+      border: 1px solid #d9d9d9;
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* Two columns split by a dashed divider — 60/40 */
+    .postcard-left,
+    .postcard-right {
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+    }
+    .postcard-left  { flex: 0 0 60%; width: 60%; }
+    .postcard-right { flex: 0 0 40%; width: 40%; }
+    .postcard-right {
+      border-left: 1.5px dashed #d0d0d0;
+    }
+
+    /* Small gray field labels ("To", "To be delivered on") */
+    .pc-label {
+      font-family: var(--font-quote);
+      font-size: 14px;
+      font-weight: 400;
+      color: #8c8c8c;
+      line-height: 1.6;
+    }
+
+    /* ── Left: editable message on ruled lines ──────────────────────────────── */
+    .pc-message {
+      flex: 1 1 auto;
+      margin-top: 4px;
+      font-family: var(--font-quote);
+      font-size: 14px;
+      font-weight: 400;
+      line-height: 28px;
+      color: #232323;
+      outline: none;
+      overflow: hidden;
+      white-space: pre-wrap;
+      word-break: break-word;
+      /* ruled lines every 28px (matches line-height) */
+      background-image: repeating-linear-gradient(
+        to bottom,
+        transparent 0, transparent 27px,
+        #e4e4e4 27px, #e4e4e4 28px
+      );
+      background-attachment: local;   /* lines scroll with the text */
+    }
+    .pc-message:empty::before {
+      content: attr(data-placeholder);
+      color: #b3b3b3;
+    }
+
+    /* ── Right: stamp (top) + address block (bottom) ────────────────────────── */
+    .pc-stamp {
+      align-self: flex-end;
+      height: 120px;
+      width: auto;
+      display: block;
+    }
+
+    .pc-address {
+      margin-top: auto;
+    }
+    .pc-addr-row {
+      font-family: var(--font-quote);
+      font-size: 14px;
+      font-weight: 400;
+      line-height: 1.85;
+      color: #232323;
+      border-bottom: 1px solid #e4e4e4;
+    }
+    .pc-addr-label {
+      color: #8c8c8c;
+      border-bottom: none;
+    }
   </style>
 </head>
 <body>
@@ -703,7 +828,7 @@
       </div>
 
       <!-- S1/S2 galaxy overlay — multiply blends galaxy texture onto white text -->
-      <img id="s12-overlay" src="/scroll-experience/gal4.jpg" alt="" />
+      <img id="s12-overlay" src="./gal4.jpg" alt="" />
 
       <!-- Stage 2: thank-you text -->
       <div class="stage-in">
@@ -716,7 +841,7 @@
       <!-- Stage 3: "That's 1 day with DBS" + spark + glare -->
       <div class="stage-3">
         <!-- Glare PNG — colorful starburst ring, screen blend -->
-        <img class="glare-png" id="glare-png" src="/scroll-experience/glare.png" alt="" />
+        <img class="glare-png" id="glare-png" src="./glare.jpg" alt="" />
 
         <!-- Spark SVG — X shape, inlined so SVG filters render correctly -->
         <div class="spark-svg" id="spark-svg">
@@ -767,10 +892,10 @@
         </div>
 
         <!-- Galaxy layers (bg → far → mid → near) -->
-        <img class="gal-layer" id="gal-bg"   src="/scroll-experience/gal3.jpg"  alt="" />
-        <div class="gal-flicker" id="gal-far-wrap"><img class="gal-layer" id="gal-far"  src="/scroll-experience/Far.png"  alt="" /></div>
-        <div class="gal-flicker" id="gal-mid-wrap"><img class="gal-layer" id="gal-mid"  src="/scroll-experience/Mid.png"  alt="" /></div>
-        <div class="gal-flicker" id="gal-near-wrap"><img class="gal-layer" id="gal-near" src="/scroll-experience/Near.png" alt="" /></div>
+        <img class="gal-layer" id="gal-bg"   src="./gal3.jpg"  alt="" />
+        <div class="gal-flicker" id="gal-far-wrap"><img class="gal-layer" id="gal-far"  src="./Far.png"  alt="" /></div>
+        <div class="gal-flicker" id="gal-mid-wrap"><img class="gal-layer" id="gal-mid"  src="./Mid.png"  alt="" /></div>
+        <div class="gal-flicker" id="gal-near-wrap"><img class="gal-layer" id="gal-near" src="./Near.png" alt="" /></div>
 
         <!-- Text on top -->
         <p class="stage-3-text">That's <span id="day-count">1</span> day with DBS</p>
@@ -789,7 +914,7 @@
       </div>
 
       <!-- Galaxy color-dodge overlay — only visible during text in/out (hidden while cards fly) -->
-      <img class="s4-overlay" id="s4-overlay" src="/scroll-experience/gal4.jpg" alt="" />
+      <img class="s4-overlay" id="s4-overlay" src="./gal4.jpg" alt="" />
     </section>
 
     <!-- Section 6: Medal -->
@@ -802,13 +927,13 @@
 
             <!-- Front face -->
             <div class="medal-face coin-front">
-              <img src="/scroll-experience/medal.svg" alt="Service Recognition Medal" class="medal-img" />
+              <img src="./medal.svg" alt="Service Recognition Medal" class="medal-img" />
               <div class="medal-shimmer" id="medal-shimmer"></div>
             </div>
 
             <!-- Back face -->
             <div class="medal-face coin-back">
-              <img src="/scroll-experience/back.png" alt="" class="medal-img" />
+              <img src="./back.png" alt="" class="medal-img" />
               <div class="medal-back-text">
                 <div class="medal-back-label">Awarded to</div>
                 <div class="medal-back-name">Timothy Tan</div>
@@ -825,17 +950,40 @@
 
       <!-- Text below medal -->
       <div class="medal-text" id="medal-text">
-        <img class="medal-text-overlay" src="/scroll-experience/gal4.jpg" alt="" />
+        <img class="medal-text-overlay" src="./gal4.jpg" alt="" />
         <p class="medal-title">Congratulations for Long Service Award</p>
         <p class="medal-subtitle">for the early calls, the late emails, and the small wins we truly appreciate.<br>Thank you Tim!</p>
       </div>
     </section>
 
-    <!-- Section 7: Write a letter -->
+    <!-- Section 7: Message for your future self — postcard -->
     <section class="section-7">
       <div class="s7-inner">
-        <p class="s7-title">Write a letter to your future self!</p>
-        <p class="s7-subtitle">Write a letter to the version of you who'll be celebrating 10 years with DBS. We will keep it safe, they'll read it.</p>
+        <img class="s7-overlay" src="./gal4.jpg" alt="" />
+        <p class="s7-title">Message for your future self!</p>
+        <p class="s7-subtitle">Write a postcard to the version of you who'll be celebrating 10 years with DBS. We will keep it safe, they'll read it.</p>
+      </div>
+      <div class="postcard">
+        <div class="postcard-left">
+
+          <div class="pc-message"
+               id="pc-message"
+               contenteditable="true"
+               role="textbox"
+               aria-multiline="true"
+               aria-label="Write your message to your future self"
+               data-placeholder="Write your message…"></div>
+        </div>
+        <div class="postcard-right">
+          <img class="pc-stamp" id="pc-stamp-img" src="" alt="stamp" />
+          <div class="pc-address">
+            <div class="pc-addr-row pc-addr-label">To</div>
+            <div class="pc-addr-row">Timothy Tan</div>
+            <div class="pc-addr-row">timothytan@dbs.com</div>
+            <div class="pc-addr-row pc-addr-label">To be delivered on</div>
+            <div class="pc-addr-row">Jun 11, 2031</div>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -970,7 +1118,9 @@ function initScrollExperience() {
   // Cover size = larger viewport dimension so the square image fully covers the
   // screen (no blank edges) at scale 1. We animate SCALE (GPU) instead of
   // width/height (layout+paint), starting zoomed-in and settling to cover.
-  const minSize = Math.max(stage.offsetWidth, window.innerHeight);
+  // +80px bleed so the ±40px mouse parallax can never expose an edge.
+  const galCoverSize = () => Math.max(window.innerWidth, window.innerHeight) + 80;
+  const minSize = galCoverSize();
   const START_SCALE = 4096 / minSize;   // same zoomed-in start as before
 
   // Split text into chars
@@ -992,6 +1142,13 @@ function initScrollExperience() {
   gsap.set(galFar,  galSet);
   gsap.set(galMid,  galSet);
   gsap.set(galNear, galSet);
+
+  // Keep the cover box in sync with the viewport — width/height are never
+  // tweened (only scale/opacity), so re-setting them won't fight the timeline.
+  window.addEventListener('resize', debounce(() => {
+    const s = galCoverSize();
+    gsap.set([galBg, galFar, galMid, galNear], { width: s, height: s });
+  }, 150));
 
   // ── Single unified timeline ──────────────────────────────────────────────
   const scrollerEl = LIFERAY_SCROLLER ? document.querySelector(LIFERAY_SCROLLER) : undefined;
@@ -1128,46 +1285,54 @@ function initSection4() {
   const scrollerEl = LIFERAY_SCROLLER ? document.querySelector(LIFERAY_SCROLLER) : undefined;
   const rnd = gsap.utils.random;
 
-  // ── 15 dummy testimonial cards ───────────────────────────────────────────
+  // ── Testimonial cards — recipient: Eddy Jian Huai TAN ────────────────────
+  // 3rd element = stamp image, mapped from each message's "value" field in the
+  // source JSON: Relationship-Led -> realtionship-led.png, Purpose-Driven -> purpose-driven.png,
+  // You're Great! -> great.png. value: null -> card-stamp.png (placeholder).
+  // 4th element = photo filename, or null -> avatar falls back to initials.
   const messages = [
-    ["I'm really glad to have your support over the past 2 years. Thank you for always checking in and offering a listening ear.", "~ Rae Lee"],
-    ["Thank you for being such an awesome team mate and partner. You always find the best creative references in just minutes.", "~ Chris Hemsworth"],
-    ["Your explorative, creative, and humorous spirit are much appreciated! Thanks for helping out at the 11th hour.", "~ Timothy Tan"],
-    ["Thank you for the trust. I feel very honoured whenever you reach out to consult. Your curiosity is inspiring.", "~ L.M Gupta"],
-    ["Appreciate the trust with your questions — glad I could help out! Always a pleasure working alongside you.", "~"],
-    ["A huge thank you for your outstanding support on the project! I'm so inspired by your growth mindset.", "~ Sarah Chen"],
-    ["It has been such a joy working with you. Your passion and thoughtfulness never go unnoticed.", "~ David Kim"],
-    ["Working with you has been one of the highlights of this year. Your dedication makes every collab effortless.", "~"],
-    ["You bring such genuine energy and care to everything you do. Thank you for lifting everyone around you.", "~ Priya N"],
-    ["Thanks for always holding space for conversations and enabling those random food trips! You're the best.", "~ Marcus Lee"],
-    ["Your honest, constructive critique of my designs makes me want to be better at my craft every day.", "~ Aisha R"],
-    ["The way you show up with a positive attitude is contagious. Grateful to have you on the team.", "~ Tom Wright"],
-    ["Thank you for the invaluable candid conversations and trust you've extended over the years.", "~ Nina P"],
-    ["Looking at the beautiful prototype you designed makes me want to push my own work further. Inspiring!", "~ Kevin O"],
-    ["You made a significant impact on the project and I truly hope we get to work together again soon.", "~ Jess M"],
+    ["I may not work directly with you on Servicing, but i'm otterly grateful to be your teammate! Thank you for the warmth and care, you help shape the team culture to be an inclusive and safe place to collaborate or simply spend time together with! Cheers~", "~ Feliciana NATALI", "realtionship-led.png", null],
+    ["Thank you, Eddy, for onboarding me to Client Connect and the prospecting piece with much patience. You are always very approachable and keen to share your knowledge, such as the past work around Account Plan. Despite challenging situations, you remain level-headed and open-minded to stakeholders' feedback to improving the experience. I think we work very efficiently together to get things done and I look forward to more collaborations with you going forward!", "~ Jesslyn TEO", "purpose-driven.png", "jesslyn.jpg"],
+    ["Thank you for ensuring high quality and consistent design outputs for Client Connect. The successful execution of these design strategies has been instrumental to its success.", "~ Tai Min WATT", "great.png", "taimin.jpg"],
+    ["A big, big shoutout to my CC team! You never fail to inspire me with your creativity and determination. Thank you for being a constant pillar of support from day one. Even though this is my first year navigating the Client Connect space, I've never once felt like a stranger or that I had to tackle challenges alone. You've always had my back, and that's given me the confidence to dream bigger and push harder. With all of you, it feels like there's nothing we can't take on together. I'm truly grateful for this team!", "~ Michelle Bridget Tze Huey LIM", "red.png", "michelle.jpg"],
+    ["I want to express my heartfelt gratitude to you. Thank you for your patience and professionalism, which have been instrumental in clarifying my doubts and making our work progress more smoothly. Your expertise and willingness to help have truly made a difference in our projects and in my professional growth. I deeply appreciate your support and guidance. Working with you has been both a pleasure and a learning experience. Thank you for being such a wonderful colleague and mentor.", "~ Darlene Duo Lin MAI", "great.png", null],
+    ["I want to say a huge thank you to all of you and entire Panda team. These past few months have been intense, but working alongside such talented and supportive teammates made all the difference. I am proud of what we've accomplished together and truly enjoyed every moment. And a huge shout-out to everyone else who helped us out too! We appreciate it!", "~ Fish Xiao Yu CHEN", "great.png", null],
+    ["Big thanks to our PMP team! It's my honor to ride through this rollercoaster journey with all of you.", "~ Yilin WANG", "card-stamp.png", null],
+    ["Thank you for being my go-to person for understanding different perspectives and guidance! The way you juggle between different projects and stakeholders while delivering high quality work inspires us to do out best. Looking forward to collaborating and learning from each of you in the future.", "~ Akhil Shrikant POKLE", "purpose-driven.png", "akhil.jpg"],
+    ["Hi Eddy, thanks for your support in every aspect of work!", "~ Joseph Boon Kiat NG", "great.png", "joseph.jpg"],
+    ["Dear Team, thank you all for your excellent collaboration, determination, and dedication. We have achieved a lot, and it would not have been possible without your strong focus, teamwork, and camaraderie we share.", "~ Anuradha JAIN", "purpose-driven.png", "anuradha.jpg"],
+    ["Thank you for being a great support and friend throughout the jounery with me!", "~ Kelvin Wee Boon Tan", "card-stamp.png", null],
+    ["To my PARTNERS-in-CCrime! Thanks for being the best comrades I have~ smashing goals, generous is sharing and teaching back, keeping intel flowing (HOHOHO!) jumping into the trenches tgt without hesitation. Just a handful of us, yet we stand strong and fight a damn good fight against you-know-whos! We are stronger! sharper! AND! unstoppable~~~~ much love", "~ Charlene Wen Hui TAN", "card-stamp.png", "charlene.jpg"],
+    ["It has truly been a joyful experience collaborating with you on Client Connect initiatives in the past and present! Thank you for the valuable partnership!", "~ Geraldine Pei Rhu WONG", "great.png", null],
+    ["Thank you for being such a wonderful teammate, and being so patient in answering all the queries regarding cc and PF. No matter how busy things get, you've always been so approachable and easy to chat with. I really appreciate all the support and good vibes. Wishing you all the best, cheers!", "~ Shirley Lo", "teach.png", null],
+    ["Thanks for your utmost contributions towards the success of this asset transfer journey with me! May we look forward to a better future as well as to the successful releases ahead!", "~ Jason Pei Long KEE", "card-stamp.png", "jason.jpg"],
+    ["Thank you for always supporting the team in many ways. You are amazing and we appreciate all the effort that you have done for the team!", "~ Yuki Shi Ting WONG", "great.png", null],
+    ["hey Eddy! just wanted to say thanks for being super helpful with all my questions on DC 🙌", "~", "card-stamp.png", "anon.jpg"],
   ];
 
-  // Assign cards to randomly-sized waves (1–4 cards each), max 4 per wave
-  const waves = [];
-  let idx = 0;
-  while (idx < messages.length) {
-    const size = Math.min(messages.length - idx, Math.round(rnd(1, 4)));
-    waves.push(Array.from({ length: size }, () => idx++));
-  }
+  // First letter of the first word + first letter of the last word of the name.
+  const initialsOf = (name) => {
+    const words = name.split(/\s+/).filter(Boolean);
+    return ((words[0]?.[0] || '') + (words[words.length - 1]?.[0] || '')).toUpperCase();
+  };
 
   // ── Build card DOM (styled from the Figma testimonial design) ─────────────
-  const cards = messages.map(([msg, author]) => {
+  const cards = messages.map(([msg, author, stamp, photo]) => {
     const name = author.replace(/^~\s*/, '').trim() || 'Anonymous';
+    const avatarHtml = photo
+      ? `<img class="s4-card-avatar s4-card-avatar-img" src="${ASSET}${photo}" alt="" />`
+      : `<div class="s4-card-avatar s4-card-avatar-initials">${initialsOf(name)}</div>`;
     const el = document.createElement('div');
     el.className = 's4-card';
     el.innerHTML =
       `<div class="s4-card-shine"></div>` +
+      `<img class="s4-card-quote" src="${ASSET}quotes.svg" alt="" />` +
       `<div class="s4-card-header">` +
-        `<img class="s4-card-avatar" src="${ASSET}card-avatar.png" alt="" />` +
+        avatarHtml +
         `<span class="s4-card-author">${name}</span>` +
       `</div>` +
-      `<p class="s4-card-message"><i class="s4-msg-cut"></i>“${msg}”</p>` +
-      `<img class="s4-card-stamp" src="${ASSET}card-stamp.png" alt="" />` +
+      `<p class="s4-card-message"><i class="s4-msg-cut"></i>${msg}</p>` +
+      `<img class="s4-card-stamp" src="${ASSET}${stamp || 'card-stamp.png'}" alt="" />` +
       `<div class="s4-card-veil"></div>`;
     layer.appendChild(el);
     return {
@@ -1196,23 +1361,59 @@ function initSection4() {
   shapeCards();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(shapeCards);
 
-  // ── Collision-free placement WITHIN each wave (cross-wave overlap is fine) ──
-  const MIN_DX = 370, MIN_DY = 240;     // min center spacing (card ≈ 340×200)
-  waves.forEach(wave => {
-    const placed = [];
-    wave.forEach(ci => {
-      let x, y, ok = false;
-      for (let tries = 0; tries < 60 && !ok; tries++) {
-        x = rnd(-650, 650);
-        y = rnd(-340, 340);
-        if (Math.abs(x) < 240) x += (x < 0 ? -240 : 240); // keep clear of center text
-        ok = placed.every(p => Math.abs(p.x - x) > MIN_DX || Math.abs(p.y - y) > MIN_DY);
-      }
-      placed.push({ x, y });
-      cards[ci].x = x;
-      cards[ci].y = y;
-      cards[ci].rot = rnd(-14, 14);
-    });
+  // ── Length-aware grouping: long cards fill a lane; shorts stack 2 per lane ──
+  // Classify by measured card height (cards are fixed 360px wide, so wrap-height
+  // is the true length signal). 220px floor splits short (1–3 lines) from essays;
+  // median term only raises the bar if the whole set skews tall.
+  const heights = cards.map(c => c.el.offsetHeight);
+  const sortedH = [...heights].sort((a, b) => a - b);
+  const median  = sortedH[sortedH.length >> 1];
+  const THRESH  = Math.max(220, median);
+
+  const longs = [], shorts = [];
+  cards.forEach((c, i) => (c.el.offsetHeight >= THRESH ? longs : shorts).push(i));
+
+  const longCols  = longs.map(i => [i]);                 // long = solo column
+  const shortCols = [];                                  // shorts = pairs (last may be 1)
+  for (let i = 0; i < shorts.length; i += 2) shortCols.push(shorts.slice(i, i + 2));
+
+  // Order columns in chunks of 2 longs then 2 short-pairs. Consecutive columns
+  // pair into symmetric, balanced waves — long+long (2-card), pair+pair (4-card)
+  // — while the leftover tail yields a mixed long+pair (3-card) wave.
+  const columns = [];
+  let li = 0, si = 0;
+  while (li < longCols.length || si < shortCols.length) {
+    for (let k = 0; k < 2 && li < longCols.length; k++) columns.push(longCols[li++]);
+    for (let k = 0; k < 2 && si < shortCols.length; k++) columns.push(shortCols[si++]);
+  }
+
+  // Wave = LEFT column + RIGHT column; trailing odd column → single-sided wave.
+  const waves = [];   // array of arrays of card indices (timeline contract)
+  for (let i = 0; i < columns.length; i += 2) {
+    const left = columns[i], right = columns[i + 1];
+    left.forEach(ci => { cards[ci].side = 'L'; });
+    if (right) right.forEach(ci => { cards[ci].side = 'R'; });
+    waves.push(right ? [...left, ...right] : [...left]);
+  }
+
+  // ── Position cards into two lanes (height-aware vertical stacking) ──────────
+  const X_BASE = 450, GAP = 90;   // generous gap: cards tilt ±10°, corners overhang ~31px each
+  const yFromCenter = (Yc, H) => Yc - (H / 2 - 95);   // put card's visual center at Yc
+  columns.forEach(col => {
+    const sx = cards[col[0]].side === 'L' ? -X_BASE : X_BASE;
+    if (col.length === 1) {
+      const ci = col[0], H = cards[ci].el.offsetHeight;
+      cards[ci].x = sx + rnd(-30, 30);
+      cards[ci].y = yFromCenter(rnd(-15, 15), H);
+      cards[ci].rot = rnd(-10, 10);
+    } else {
+      const [t, b] = col;
+      const Ht = cards[t].el.offsetHeight, Hb = cards[b].el.offsetHeight;
+      const S = Ht + GAP + Hb;
+      const k = Math.min(1, 720 / S);                  // clamp stack to viewport
+      cards[t].x = sx + rnd(-30, 30); cards[t].y = yFromCenter((-S / 2 + Ht / 2) * k, Ht); cards[t].rot = rnd(-10, 10);
+      cards[b].x = sx + rnd(-30, 30); cards[b].y = yFromCenter(( S / 2 - Hb / 2) * k, Hb); cards[b].rot = rnd(-10, 10);
+    }
   });
 
   // Depth keyframes
@@ -1243,7 +1444,7 @@ function initSection4() {
   // ── Pinned scrub timeline ────────────────────────────────────────────────
   // Continuous dolly: each wave's cards travel depth→past; STEP small enough
   // that ~3 waves are in flight at once. Opacity is recomputed from live Z.
-  const STEP = 0.7;                  // smaller gap => more waves visible at once
+  const STEP = 1.2;                  // larger gap => fewer waves in flight, more readable
   const JOURNEY = 2.8;               // units for a card to go deep-origin → past
   // lastEnd + re-show(0.4) + blur-out(1.0) + hold(0.5)
   const total = 1 + (waves.length - 1) * STEP + JOURNEY + 1.9;
@@ -1450,10 +1651,15 @@ function initSection7() {
   const s7 = document.querySelector('.section-7');
   if (!s7) return;
 
+  const stampImg = s7.querySelector('#pc-stamp-img');
+  if (stampImg) stampImg.src = ASSET + 'stamp.png';
+
+  const postcard      = s7.querySelector('.postcard');
   const titleChars    = splitRoots([s7.querySelector('.s7-title')]);
   const subtitleChars = splitRoots([s7.querySelector('.s7-subtitle')]);
   gsap.set(titleChars,    { filter: 'blur(10px) brightness(0%)', willChange: 'filter' });
   gsap.set(subtitleChars, { filter: 'blur(10px) brightness(0%)', willChange: 'filter' });
+  gsap.set(postcard,      { opacity: 0, y: 40, willChange: 'transform, opacity' });
 
   const scrollerEl = LIFERAY_SCROLLER ? document.querySelector(LIFERAY_SCROLLER) : undefined;
   const stCfg = {
@@ -1465,7 +1671,9 @@ function initSection7() {
   const tl = gsap.timeline({ scrollTrigger: stCfg });
   tl.to(titleChars,    { filter: 'blur(0px) brightness(100%)', stagger: 0.03, duration: 1, ease: 'none' }, 0.0);
   tl.to(subtitleChars, { filter: 'blur(0px) brightness(100%)', stagger: 0.015, duration: 1, ease: 'none' }, 0.3);
-  tl.to({}, { duration: 1.5 }, 1.0);   // hold
+  // Postcard fades + slides up only after the title/subtitle have landed
+  tl.to(postcard,      { opacity: 1, y: 0, duration: 1, ease: 'power2.out' }, 1.4);
+  tl.to({}, { duration: 2.0 }, 1.0);   // hold
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1624,9 +1832,12 @@ function initFontPanel() {
 const PRELOAD_ASSETS = [
   'gal4.jpg', 'gal3.jpg',
   'Far.png', 'Mid.png', 'Near.png',
-  'glare.png', 'shimmer.png',
+  'glare.jpg', 'shimmer.png',
   'medal.svg', 'medal-edge.svg', 'back.png',
-  'card-avatar.png', 'card-stamp.png',
+  'card-stamp.png', 'stamp.png', 'quotes.svg',
+  'teach.png', 'red.png', 'purpose-driven.png', 'realtionship-led.png', 'great.png',
+  'jesslyn.jpg', 'taimin.jpg', 'michelle.jpg', 'akhil.jpg', 'joseph.jpg',
+  'anuradha.jpg', 'charlene.jpg', 'jason.jpg', 'anon.jpg',
 ];
 
 function preloadAssets(onProgress) {
