@@ -1154,7 +1154,7 @@ function initScrollExperience() {
   const scrollerEl = LIFERAY_SCROLLER ? document.querySelector(LIFERAY_SCROLLER) : undefined;
   const stCfg = {
     trigger: stage, start: 'top top',
-    end: '+=1250%', pin: true, pinSpacing: true, scrub: 1,
+    end: '+=760%', pin: true, pinSpacing: true, scrub: 1,
   };
   if (scrollerEl) stCfg.scroller = scrollerEl;
 
@@ -1259,13 +1259,12 @@ function initScrollExperience() {
   // ── Dead scroll hold — users experience the full galaxy (10.5 → 11.0) ───
   tl.to({}, { duration: 0.5 }, 10.5);
 
-  // ── Fade galaxy + glare + spark + S3 text out (11.0 → 12.0) ─────────────
-  tl.to([galBg, galFar, galMid, galNear], { opacity: 0, ease: 'none', duration: 1 }, 11.0);
-  tl.to([glarePng, sparkSvg],             { opacity: 0, ease: 'none', duration: 1 }, 11.0);
-  tl.to(stage3Txt,                        { opacity: 0, filter: 'blur(8px)', ease: 'none', duration: 0.8 }, 11.0);
-
-  // ── Hold on black, then pin releases (12.0 → 12.5) ──────────────────────
-  tl.to({}, { duration: 0.5 }, 12.0);
+  // ── Fade galaxy + glare + spark + S3 text out (11.0 → 11.7) ─────────────
+  // Tightened + black hold removed: Section 4 opens on black with its title
+  // blurring in, so a separate hold here was redundant dead scroll.
+  tl.to([galBg, galFar, galMid, galNear], { opacity: 0, ease: 'none', duration: 0.7 }, 11.0);
+  tl.to([glarePng, sparkSvg],             { opacity: 0, ease: 'none', duration: 0.7 }, 11.0);
+  tl.to(stage3Txt,                        { opacity: 0, filter: 'blur(8px)', ease: 'none', duration: 0.6 }, 11.0);
 
 }
 
@@ -1470,7 +1469,7 @@ function initSection4() {
   const total = 1 + (waves.length - 1) * STEP + JOURNEY + 1.9;
   const stCfg = {
     trigger: s4, start: 'top top',
-    end: '+=' + Math.round(total * 100) + '%',
+    end: '+=' + Math.round(total * 65) + '%',
     pin: true, pinSpacing: true, scrub: 1,
     onUpdate() {
       // Drive each card's depth-darkness (veil), exit fade, and rainbow sweep from Z
@@ -1589,7 +1588,7 @@ function initSection6() {
   // ── Pinned scrub timeline ────────────────────────────────────────────────
   const stCfg = {
     trigger: s6, start: 'top top',
-    end: '+=600%', pin: true, pinSpacing: true, scrub: 1,
+    end: '+=390%', pin: true, pinSpacing: true, scrub: 1,
   };
   if (scrollerEl) stCfg.scroller = scrollerEl;
 
@@ -1684,7 +1683,7 @@ function initSection7() {
   const scrollerEl = LIFERAY_SCROLLER ? document.querySelector(LIFERAY_SCROLLER) : undefined;
   const stCfg = {
     trigger: s7, start: 'top top',
-    end: '+=250%', pin: true, pinSpacing: true, scrub: 1,
+    end: '+=160%', pin: true, pinSpacing: true, scrub: 1,
   };
   if (scrollerEl) stCfg.scroller = scrollerEl;
 
