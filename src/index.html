@@ -75,6 +75,35 @@
     }
     .s1-title   { font-size: 48px; }
 
+    /* Scroll hint (mouse outline + bouncing dot) */
+    .scroll-hint {
+      margin-top: 64px;
+      display: flex;
+      justify-content: center;
+      pointer-events: none;
+    }
+    .scroll-hint-mouse {
+      width: 20px;
+      height: 32px;
+      border: 2px solid rgba(255, 255, 255, 0.7);
+      border-radius: 10px;
+      display: flex;
+      justify-content: center;
+      padding-top: 6px;
+    }
+    .scroll-hint-dot {
+      width: 3px;
+      height: 6px;
+      border-radius: 2px;
+      background: rgba(255, 255, 255, 0.9);
+      animation: scrollHintDot 1.6s ease-in-out infinite;
+    }
+    @keyframes scrollHintDot {
+      0%   { transform: translateY(0);    opacity: 1; }
+      70%  { transform: translateY(12px); opacity: 0; }
+      100% { transform: translateY(0);    opacity: 0; }
+    }
+
     /* Stage 2 */
     .stage-in {
       position: absolute;
@@ -825,6 +854,10 @@
       <div class="stage-out">
         <p class="s1-subtext" style="font-variation-settings:'opsz' 14,'wdth' 100">Hello Eddy Jian Huai TAN,</p>
         <p class="s1-title" style="font-variation-settings:'opsz' 14,'wdth' 100">We have something special for you</p>
+        <!-- Scroll hint — outer: one-time fade-in; mouse: scrubbed fade-out; dot: CSS bounce -->
+        <div class="scroll-hint">
+          <div class="scroll-hint-mouse"><span class="scroll-hint-dot"></span></div>
+        </div>
       </div>
 
       <!-- S1/S2 galaxy overlay — multiply blends galaxy texture onto white text -->
@@ -1114,6 +1147,8 @@ function initScrollExperience() {
   const galFarWrap  = document.getElementById('gal-far-wrap');
   const galMidWrap  = document.getElementById('gal-mid-wrap');
   const galNearWrap = document.getElementById('gal-near-wrap');
+  const scrollHint      = stage.querySelector('.scroll-hint');
+  const scrollHintMouse = stage.querySelector('.scroll-hint-mouse');
 
   // Cover size = larger viewport dimension so the square image fully covers the
   // screen (no blank edges) at scale 1. We animate SCALE (GPU) instead of
@@ -1135,6 +1170,10 @@ function initScrollExperience() {
   // Center glare + spark via GSAP (never use CSS translate on GSAP-animated elements)
   gsap.set(glarePng, { xPercent: -50, yPercent: -50, scale: 0, opacity: 0 });
   gsap.set(sparkSvg, { xPercent: -50, yPercent: -50, scale: 0, opacity: 0 });
+
+  // Scroll hint fades in once on load (non-scrubbed); the scrubbed fade-out
+  // below targets the inner .scroll-hint-mouse so the two never fight.
+  gsap.from(scrollHint, { opacity: 0, duration: 0.8, delay: 0.4, ease: 'power1.out' });
 
   // Galaxy layer initial states — fixed cover-size box, started zoomed via scale
   const galSet = { xPercent: -50, yPercent: -50, width: minSize, height: minSize, scale: START_SCALE, opacity: 0 };
@@ -1159,6 +1198,9 @@ function initScrollExperience() {
   if (scrollerEl) stCfg.scroller = scrollerEl;
 
   const tl = gsap.timeline({ scrollTrigger: stCfg });
+
+  // Scroll hint fades out as soon as scrolling begins (inner element only)
+  tl.to(scrollHintMouse, { opacity: 0, duration: 0.5, ease: 'none' }, 0.0);
 
   // Stage 1 → 2
   if (chars1.length)
@@ -1683,7 +1725,7 @@ function initSection7() {
   const scrollerEl = LIFERAY_SCROLLER ? document.querySelector(LIFERAY_SCROLLER) : undefined;
   const stCfg = {
     trigger: s7, start: 'top top',
-    end: '+=160%', pin: true, pinSpacing: true, scrub: 1,
+    end: '+=130%', pin: true, pinSpacing: true, scrub: 1,
   };
   if (scrollerEl) stCfg.scroller = scrollerEl;
 
@@ -1692,7 +1734,7 @@ function initSection7() {
   tl.to(subtitleChars, { filter: 'blur(0px) brightness(100%)', stagger: 0.015, duration: 1, ease: 'none' }, 0.3);
   // Postcard fades + slides up only after the title/subtitle have landed
   tl.to(postcard,      { opacity: 1, y: 0, duration: 1, ease: 'power2.out' }, 1.4);
-  tl.to({}, { duration: 2.0 }, 1.0);   // hold
+  tl.to({}, { duration: 1.4 }, 1.0);   // hold ends at 2.4 when postcard settles
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
